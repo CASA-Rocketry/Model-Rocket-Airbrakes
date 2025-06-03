@@ -1,10 +1,7 @@
 #include <Servo.h>
+#include <SPI.h>
+#include <SD.h>
 
-double t_i, t_f = 0;
-double y_i, y_f = 0;
-double v_i, v_f = 0;
-
-double servoCommand = 0;
 
 enum FlightMode {
   LAUNCH_PAD = 0,
@@ -16,7 +13,15 @@ enum FlightMode {
 
 enum FlightMode mode = LAUNCH_PAD;
 
+//Hardware
 Servo servo;
+
+
+double t_i, t_f = 0;
+double y_i, y_f = 0;
+double v_i, v_f = 0;
+
+double servoCommand = 0;
 
 
 void setup() {
