@@ -33,6 +33,71 @@ class ControllerConfig:
     apogee_prediction_cd: float = 1.0
 
 
+@dataclass
+class RocketConfig:
+
+    # Rocket values
+    radius: float = 0.028
+    mass: float = 0.45
+    inertia: tuple = (0.001, 0.001, 0.0001)
+    power_off_drag: str = "RocketDragCurve.csv"
+    power_on_drag: str = "RocketDragCurve.csv"
+    center_of_mass_without_motor: float = 0.35
+    coordinate_system_orientation: str = "nose_to_tail"
+
+    # Motor values
+    motor_eng_file: str = "AeroTech_F42T_L.eng"
+    motor_chamber_radius: float = 0.0145
+    motor_chamber_height: float = 0.083
+    motor_position: float = 0.77
+
+    # Nose values
+    nose_length: float = 0.13
+    nose_kind: str = "von karman"
+    nose_position: float = 0
+
+    # Fin values
+    fin_n: int = 4
+    fin_root_chord: float = 0.075
+    fin_tip_chord: float = 0.050
+    fin_span: float = 0.03
+    fin_position: float = 0.695
+    fin_cant_angle: float = 0.5
+
+    # Parachute values
+    parachute_name: str = "Chute"
+    parachute_cd_s: float = 0.8
+    parachute_trigger: float = 210
+    parachute_sampling_rate: int = 10
+    parachute_lag: float = 0
+    parachute_noise: tuple = (0, 8.3, 0.5)
+
+    # Barometer values
+    barometer_sampling_rate: int = 50
+    barometer_measurement_range: float = 100000
+    barometer_resolution: float = 0.1
+    barometer_noise_density: float = 0.3
+    barometer_noise_variance: float = 2.0
+    barometer_random_walk_density: float = 0.01
+    barometer_constant_bias: float = 0.2
+    barometer_operating_temperature: float = 25
+    barometer_temperature_bias: float = 0.005
+    barometer_temperature_scale_factor: float = 0.005
+    barometer_name: str = "Barometer"
+    barometer_position: tuple = (0.265, 0, 0)
+
+    # Airbrake values
+    airbrake_drag_coefficient_curve: str = "BrakeDragCurve.csv"
+    airbrake_clamp: bool = True
+    airbrake_initial_observed_variables: list = None
+    airbrake_override_rocket_drag: bool = False
+    airbrake_name: str = "Airbrakes"
+
+    def __post_init__(self):
+        if self.airbrake_initial_observed_variables is None:
+            self.airbrake_initial_observed_variables = [0]
+
+
 class KalmanAltitudeFilter:
     """Kalman filter for altitude and velocity estimation"""
     def __init__(self, config: ControllerConfig):
@@ -254,8 +319,9 @@ class AirbrakeController:
 
 
 class SimulationRunner:
-    def __init__(self, config: ControllerConfig):
+    def __init__(self, config: ControllerConfig, rocket_config: RocketConfig):
         self.config = config
+        self.rocket_config = rocket_config
         self.controller = None
 
     def setup_environment(self):
@@ -267,50 +333,70 @@ class SimulationRunner:
 
     def setup_rocket(self):
         rocket = Rocket(
-            radius=self.config.rocket_radius,
-            mass=0.45,
-            inertia=(0.001, 0.001, 0.0001),
-            power_off_drag="RocketDragCurve.csv",
-            power_on_drag="RocketDragCurve.csv",
-            center_of_mass_without_motor=0.35,
-            coordinate_system_orientation="nose_to_tail",
+            radius=self.rocket_config.radius,
+            mass=self.rocket_config.mass,
+            inertia=self.rocket_config.inertia,
+            power_off_drag=self.rocket_config.power_off_drag,
+            power_on_drag=self.rocket_config.power_on_drag,
+            center_of_mass_without_motor=self.rocket_config.center_of_mass_without_motor,
+            coordinate_system_orientation=self.rocket_config.coordinate_system_orientation,
         )
 
         motor = GenericMotor.load_from_eng_file(
-            file_name="AeroTech_F42T_L.eng",
-            chamber_radius=0.0145,
-            chamber_height=0.083
+            file_name=self.rocket_config.motor_eng_file,
+            chamber_radius=self.rocket_config.motor_chamber_radius,
+            chamber_height=self.rocket_config.motor_chamber_height
         )
-        rocket.add_motor(motor, position=0.77)
+        rocket.add_motor(motor, position=self.rocket_config.motor_position)
 
-        rocket.add_nose(length=0.13, kind="von karman", position=0)
+        rocket.add_nose(
+            length=self.rocket_config.nose_length,
+            kind=self.rocket_config.nose_kind,
+            position=self.rocket_config.nose_position
+        )
         rocket.add_trapezoidal_fins(
-            n=4, root_chord=0.075, tip_chord=0.050, span=0.03,
-            position=0.695, cant_angle=0.5)
+            n=self.rocket_config.fin_n,
+            root_chord=self.rocket_config.fin_root_chord,
+            tip_chord=self.rocket_config.fin_tip_chord,
+            span=self.rocket_config.fin_span,
+            position=self.rocket_config.fin_position,
+            cant_angle=self.rocket_config.fin_cant_angle
+        )
         rocket.add_parachute(
-            name="Chute", cd_s=0.8, trigger=210, sampling_rate=10,
-            lag=0, noise=(0, 8.3, 0.5))
+            name=self.rocket_config.parachute_name,
+            cd_s=self.rocket_config.parachute_cd_s,
+            trigger=self.rocket_config.parachute_trigger,
+            sampling_rate=self.rocket_config.parachute_sampling_rate,
+            lag=self.rocket_config.parachute_lag,
+            noise=self.rocket_config.parachute_noise
+        )
 
         barometer = Barometer(
-            sampling_rate=50, measurement_range=100000, resolution=0.1,
-            noise_density=0.3, noise_variance=2.0, random_walk_density=0.01,
-            constant_bias=0.2, operating_temperature=25,
-            temperature_bias=0.005, temperature_scale_factor=0.005,
-            name="Barometer"
+            sampling_rate=self.rocket_config.barometer_sampling_rate,
+            measurement_range=self.rocket_config.barometer_measurement_range,
+            resolution=self.rocket_config.barometer_resolution,
+            noise_density=self.rocket_config.barometer_noise_density,
+            noise_variance=self.rocket_config.barometer_noise_variance,
+            random_walk_density=self.rocket_config.barometer_random_walk_density,
+            constant_bias=self.rocket_config.barometer_constant_bias,
+            operating_temperature=self.rocket_config.barometer_operating_temperature,
+            temperature_bias=self.rocket_config.barometer_temperature_bias,
+            temperature_scale_factor=self.rocket_config.barometer_temperature_scale_factor,
+            name=self.rocket_config.barometer_name
         )
-        rocket.add_sensor(barometer, position=(0.265, 0, 0))
+        rocket.add_sensor(barometer, position=self.rocket_config.barometer_position)
 
         self.controller = AirbrakeController(self.config, motor.burn_out_time)
 
         rocket.add_air_brakes(
-            drag_coefficient_curve="air_brakes_cd.csv",
+            drag_coefficient_curve=self.rocket_config.airbrake_drag_coefficient_curve,
             controller_function=self.controller.control,
             sampling_rate=self.config.sampling_rate,
             reference_area=self.config.airbrake_area,
-            clamp=True,
-            initial_observed_variables=[0],
-            override_rocket_drag=False,
-            name="Air Brakes",
+            clamp=self.rocket_config.airbrake_clamp,
+            initial_observed_variables=self.rocket_config.airbrake_initial_observed_variables,
+            override_rocket_drag=self.rocket_config.airbrake_override_rocket_drag,
+            name=self.rocket_config.airbrake_name,
         )
 
         return rocket, motor
@@ -479,7 +565,8 @@ class SimulationRunner:
 
 def main():
     config = ControllerConfig()
-    runner = SimulationRunner(config)
+    rocket_config = RocketConfig()
+    runner = SimulationRunner(config, rocket_config)
     runner.run_full_simulation()
 
 
