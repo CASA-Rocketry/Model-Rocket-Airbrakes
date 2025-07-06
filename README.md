@@ -1,2 +1,2 @@
-# AduinoAirbrakes
-Software for arduino-based airbrake system for model rockets to reach target apogee
+# Model Rocket Airbrakes 
+Flight code and python simulation for model rocket airbrakes
