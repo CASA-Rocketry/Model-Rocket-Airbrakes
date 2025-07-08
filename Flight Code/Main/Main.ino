@@ -23,8 +23,8 @@ void setup() {
   Serial.begin(9600);
   
   //Initialize hardware
-  initializeAlt();
   initializeLED();
+  initializeAlt();
   initializeServo();
   initializeLog();
   initializeKalmanFilter();

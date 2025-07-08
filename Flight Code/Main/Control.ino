@@ -37,12 +37,12 @@ void updateKalmanFilter(float dT){
          0.0, 0.0,  1.0};
 
   //Print output for tuning
-  Serial.print("alt:");
-  Serial.print(altitudeReading);
-  Serial.print(", ");
-  K.update(obs);
-  Serial.print("Kx0:");
-  Serial.println(K.x(0));
+  // Serial.print("alt:");
+  // Serial.print(altitudeReading);
+  // Serial.print(", ");
+  // K.update(obs);
+  // Serial.print("Kx0:");
+  // Serial.println(K.x(0));
 
 }
 

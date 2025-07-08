@@ -38,8 +38,15 @@ void calibrateAlt(){
   float sum = 0;
   for(int i = 0; i < CALIBRATION_SAMPLE_SIZE; i++){
     sum += getRawAlt();
+    //LED blinking
+    if(i % 10 == 5)
+      setLED(HIGH);
+    else if(i % 10 == 0)
+      setLED(LOW);
+    
     delay(CALIBRATION_SAMPLE_RATE);
   }
+  setLED(LOW);
     
   float average = sum / CALIBRATION_SAMPLE_SIZE;
   offset = CALIBRATION_POINT - average;
