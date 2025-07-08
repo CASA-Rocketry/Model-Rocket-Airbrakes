@@ -16,27 +16,25 @@ void initializeLog(){
 //Create flight file
   File root = SD.open("/");
 
-  int flightNumber = 1;
+  int flightNumber = 0;
   while(root.openNextFile())
     flightNumber++;
   root.close();
-  SD.remove("Flight.csv");
-  Serial.println("Flight" + String(flightNumber) + ".csv");
-  flightFile = SD.open("Flight.csv", FILE_WRITE);
+
+
+//This part fails if SD is in the arduino when it is flashed
+  String fileName = "Flight" + String(flightNumber) + ".csv";
+  Serial.println("Logging to " + fileName);
+  flightFile = SD.open(fileName, FILE_WRITE);
   if(!flightFile){
     Serial.println("ERROR opening flight file");
     enterErrorMode(3);
   }
-  flightFile.println("File opened");
+  flightFile.print("Time, Raw Altitude, Ky, Kv, Ka, y max predicted");
 }
 
 void endLog(){
   flightFile.close();
-}
-
-void createLogHeader(String header){
-  Serial.println("Time, Raw Altitude, Ky, Kv, Ka, y max predicted");
-  flightFile.println("Time, Raw Altitude, Ky, Kv, Ka, y max predicted");
 }
 
 void logItem(double value){
@@ -50,4 +48,9 @@ void newLogLine(){
   logItem(millis()/1000.0);
 }
 
+void updateLogs(){
+  newLogLine();
+  logAltimeter();
+  logControl();
+}
 

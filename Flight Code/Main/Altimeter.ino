@@ -43,14 +43,14 @@ void calibrateAlt(){
       setLED(HIGH);
     else if(i % 10 == 0)
       setLED(LOW);
-    
+
     delay(CALIBRATION_SAMPLE_RATE);
   }
   setLED(LOW);
     
   float average = sum / CALIBRATION_SAMPLE_SIZE;
   offset = CALIBRATION_POINT - average;
-  Serial.print("Average: ");
+  Serial.print("Calibration complete! ... Average: ");
   Serial.println(average);
 }
 

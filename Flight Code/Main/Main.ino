@@ -1,4 +1,3 @@
-
 //Shared pin definitions
 #define SCK 13
 #define MISO 12
@@ -28,9 +27,6 @@ void setup() {
   initializeServo();
   initializeLog();
   initializeKalmanFilter();
- 
-
-  createLogHeader(String("Time, Raw Altitude, Ky, Kv, Ka, y max predicted"));
 }
 
 void loop() {
@@ -40,12 +36,9 @@ void loop() {
   time = timeNew;
 
   updateKalmanFilter(dt);
+  updateLogs();
 
-
-  //Logging
-  newLogLine();
-  logAltimeter();
-  logControl();
+  
 
 
   //Mange flight states
