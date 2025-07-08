@@ -1,5 +1,5 @@
-#include <SD.h>
 #include <SPI.h>
+#include <SD.h>
 #include <string.h>
 
 #define SD_CS 10
@@ -7,29 +7,27 @@
 File flightFile;
 
 void initializeLog(){
+
   if(!SD.begin(SD_CS)){
     Serial.println("ERROR initializing log");
     enterErrorMode(2);
   }
 
-
 //Create flight file
-  File root = SD.open("/");
-
-  int flightNumber = 0;
-  while(root.openNextFile())
+  int flightNumber = 1;
+  String fileName;
+  do{
+    fileName = "Flight" + String(flightNumber) + ".csv";
     flightNumber++;
-  root.close();
+  } while(SD.exists(fileName));
+  
 
-
-//This part fails if SD is in the arduino when it is flashed
-  String fileName = "Flight" + String(flightNumber) + ".csv";
-  Serial.println("Logging to " + fileName);
   flightFile = SD.open(fileName, FILE_WRITE);
   if(!flightFile){
     Serial.println("ERROR opening flight file");
     enterErrorMode(3);
   }
+  Serial.println("Successfully logging to " + fileName);
   flightFile.print("Time, Raw Altitude, Ky, Kv, Ka, y max predicted");
 }
 

@@ -11,7 +11,7 @@
 
 #define CALIBRATION_POINT 0.0
 #define CALIBRATION_SAMPLE_SIZE 100
-#define CALIBRATION_SAMPLE_RATE 10 //ms
+#define CALIBRATION_SAMPLE_RATE 20 //ms
 
 float offset;
 

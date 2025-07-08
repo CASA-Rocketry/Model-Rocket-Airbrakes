@@ -9,9 +9,9 @@
 
 //Noise estimates
 #define SENSOR_STD 0.278001153 //noise of position observation
-#define MODEL_Y_STD 0.01
-#define MODEL_V_STD 0.01
-#define MODEL_A_STD 0.01
+#define MODEL_Y_STD 0.1
+#define MODEL_V_STD 0.1
+#define MODEL_A_STD 0.1
 
 BLA::Matrix<NUM_OBS> obs; //observation vector
 KALMAN<NUM_STATE, NUM_OBS> K; //Kalman filter
@@ -36,13 +36,22 @@ void updateKalmanFilter(float dT){
 		    0.0,  1.0,   dt,
          0.0, 0.0,  1.0};
 
+  K.update(obs);
+
   //Print output for tuning
-  // Serial.print("alt:");
-  // Serial.print(altitudeReading);
-  // Serial.print(", ");
-  // K.update(obs);
-  // Serial.print("Kx0:");
-  // Serial.println(K.x(0));
+  Serial.print("alt:");
+  Serial.print(altitudeReading);
+  Serial.print(", ");
+  
+  Serial.print("Kx0:");
+  Serial.print(K.x(0));
+  Serial.print(", ");
+  Serial.print("Kx1:");
+  Serial.print(K.x(1));
+  Serial.print(", ");
+  Serial.print("Kx2:");
+  Serial.println(K.x(2));
+
 
 }
 

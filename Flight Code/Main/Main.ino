@@ -3,7 +3,7 @@
 #define MISO 12
 #define MOSI 11
 
-unsigned long time = 0, timeNew;
+unsigned long timeMillis = 0, timeNewMillis;
 float dt;
 
 
@@ -20,20 +20,22 @@ float dt;
 
 void setup() {
   Serial.begin(9600);
+  while(!Serial);
   
   //Initialize hardware
   initializeLED();
+  initializeLog();
+  Serial.println("Initialized log");
   initializeAlt();
   initializeServo();
-  initializeLog();
-  initializeKalmanFilter();
+  initializeKalmanFilter(); 
 }
 
 void loop() {
   //Update timers
-  timeNew = millis() / 1000.0;
-  dt = timeNew - time;
-  time = timeNew;
+  timeNewMillis = millis();
+  dt = (timeNewMillis - timeMillis)/1000.0;
+  timeMillis = timeNewMillis;
 
   updateKalmanFilter(dt);
   updateLogs();
