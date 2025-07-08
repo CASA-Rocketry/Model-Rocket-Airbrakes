@@ -19,17 +19,23 @@ void initializeLog(){
   while(root.openNextFile())
     flightNumber++;
   root.close();
-
-  Serial.println("Flight" + String(flightNumber) + ".txt");
-  flightFile = SD.open("Flight" + String(flightNumber) + ".csv", FILE_WRITE);
+  SD.remove("Flight.csv");
+  Serial.println("Flight" + String(flightNumber) + ".csv");
+  flightFile = SD.open("Flight.csv", FILE_WRITE);
   if(!flightFile){
     Serial.println("ERROR opening flight file");
+    while(true);
   }
   flightFile.println("File opened");
 }
 
 void endLog(){
   flightFile.close();
+}
+
+void createLogHeader(String header){
+  Serial.println("Time, Raw Altitude, Ky, Kv, Ka, y max predicted");
+  flightFile.println("Time, Raw Altitude, Ky, Kv, Ka, y max predicted");
 }
 
 void logItem(double value){

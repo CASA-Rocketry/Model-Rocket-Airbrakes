@@ -13,7 +13,7 @@
 #define CALIBRATION_SAMPLE_SIZE 100
 #define CALIBRATION_SAMPLE_RATE 10 //ms
 
-double offset;
+float offset;
 
 Adafruit_BME280 alt(ALT_CS);
 
@@ -25,22 +25,22 @@ void initializeAlt(){
   calibrateAlt();
 }
 
-double getRawAlt(){
+float getRawAlt(){
   return alt.readAltitude(SEALEVELPRESSURE_HPA);
 }
 
-double getCalibratedAlt(){
+float getCalibratedAlt(){
   return getRawAlt() + offset;
 }
 
 void calibrateAlt(){
-  double sum = 0;
+  float sum = 0;
   for(int i = 0; i < CALIBRATION_SAMPLE_SIZE; i++){
     sum += getRawAlt();
     delay(CALIBRATION_SAMPLE_RATE);
   }
     
-  double average = sum / CALIBRATION_SAMPLE_SIZE;
+  float average = sum / CALIBRATION_SAMPLE_SIZE;
   offset = CALIBRATION_POINT - average;
   Serial.print("Average: ");
   Serial.println(average);

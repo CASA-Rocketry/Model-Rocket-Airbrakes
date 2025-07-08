@@ -9,6 +9,9 @@
 
 #define LED_PIN 2
 
+unsigned long time = 0, timeNew;
+float dt;
+
 
 // enum FlightMode {
 //   LAUNCH_PAD = 0,
@@ -28,14 +31,26 @@ void setup() {
   initializeAlt();
   initializeServo();
   initializeLog();
+  initializeKalmanFilter();
  
+
+  createLogHeader(String("Time, Raw Altitude, Ky, Kv, Ka, y max predicted"));
 }
 
 void loop() {
+  //Update timers
+  timeNew = millis() / 1000.0;
+  dt = timeNew - time;
+  time = timeNew;
+
+  updateKalmanFilter(dt);
+
 
   //Logging
   newLogLine();
   logAltimeter();
+  logControl();
+
 
   //Mange flight states
   // switch(mode){
@@ -55,6 +70,6 @@ void loop() {
   //   case LAND:
   //     servoCommand = 0;
   // }
-  delay(100);
+  delay(50);
 
 }
