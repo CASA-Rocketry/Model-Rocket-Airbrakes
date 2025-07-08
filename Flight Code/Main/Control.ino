@@ -29,19 +29,23 @@ void initializeKalmanFilter(){
 
 void updateKalmanFilter(float dT){
   float altitudeReading = getCalibratedAlt();
-  Serial.print("alt:");
-  Serial.print(altitudeReading);
-  Serial.print(", ");
+  
   obs.Fill(altitudeReading); //Create measurement matrix
   //Update state transition matrix
   K.F = {1.0,  dt,  dt*dt/2,
 		    0.0,  1.0,   dt,
          0.0, 0.0,  1.0};
+
+  //Print output for tuning
+  Serial.print("alt:");
+  Serial.print(altitudeReading);
+  Serial.print(", ");
   K.update(obs);
   Serial.print("Kx0:");
   Serial.println(K.x(0));
 
 }
+
 
 float getPredictedApogee(){
   float dy = 0.5 * K.x(1) * K.x(1) / g;

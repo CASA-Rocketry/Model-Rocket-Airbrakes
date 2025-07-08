@@ -4,11 +4,6 @@
 #define MISO 12
 #define MOSI 11
 
-
-#define SD_CS 10
-
-#define LED_PIN 2
-
 unsigned long time = 0, timeNew;
 float dt;
 
@@ -29,6 +24,7 @@ void setup() {
   
   //Initialize hardware
   initializeAlt();
+  initializeLED();
   initializeServo();
   initializeLog();
   initializeKalmanFilter();

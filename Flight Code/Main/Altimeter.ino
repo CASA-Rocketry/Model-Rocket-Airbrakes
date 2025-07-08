@@ -20,7 +20,8 @@ Adafruit_BME280 alt(ALT_CS);
 void initializeAlt(){
   unsigned status = alt.begin();
   if(!status){
-    //Throw error
+    Serial.println("ERROR initializing alt");
+    enterErrorMode(1);
   }
   calibrateAlt();
 }

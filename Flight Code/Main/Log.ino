@@ -9,6 +9,7 @@ File flightFile;
 void initializeLog(){
   if(!SD.begin(SD_CS)){
     Serial.println("ERROR initializing log");
+    enterErrorMode(2);
   }
 
 
@@ -24,7 +25,7 @@ void initializeLog(){
   flightFile = SD.open("Flight.csv", FILE_WRITE);
   if(!flightFile){
     Serial.println("ERROR opening flight file");
-    while(true);
+    enterErrorMode(3);
   }
   flightFile.println("File opened");
 }
