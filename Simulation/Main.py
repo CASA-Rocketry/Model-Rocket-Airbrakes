@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from filterpy.kalman import KalmanFilter
-from filterpy.common import Q_discrete_white_noise
 from dataclasses import dataclass
 import logging
 
@@ -22,20 +21,19 @@ class ControllerConfig:
     env_elevation: float = 200
     burnout_mass: float = 0.5
     sampling_rate: int = 20
-    sensor_noise_variance: float = 0.5
-    process_noise_burn: float = 200.0
-    process_noise_coast: float = 25.0
-    acceleration_decay_burn: float = 0.99
-    acceleration_decay_coast: float = 0.95
-    velocity_process_boost: float = 4.0
+    sensor_std: float = 0.062
+    model_y_std: float = 0.02
+    model_v_std: float = 0.5
+    model_a_std: float = 0.1
     kp_base: float = 7000.0
     max_deployment_rate: float = 0.5
     apogee_prediction_cd: float = 1.0
+    acceleration_decay_burn: float = 0.85
+    acceleration_decay_coast: float = 0.85
 
 
 @dataclass
 class RocketConfig:
-
     # Rocket values
     radius: float = 0.028
     mass: float = 0.45
@@ -75,14 +73,14 @@ class RocketConfig:
     # Barometer values
     barometer_sampling_rate: int = 50
     barometer_measurement_range: float = 100000
-    barometer_resolution: float = 0.1
-    barometer_noise_density: float = 0.3
-    barometer_noise_variance: float = 2.0
-    barometer_random_walk_density: float = 0.01
-    barometer_constant_bias: float = 0.2
-    barometer_operating_temperature: float = 25
-    barometer_temperature_bias: float = 0.005
-    barometer_temperature_scale_factor: float = 0.005
+    barometer_resolution: float = 1.0 / 4096
+    barometer_noise_density: float = 0
+    barometer_noise_variance: float = 0.5625
+    barometer_random_walk_density: float = 0.0
+    barometer_constant_bias: float = 0.0
+    barometer_operating_temperature: float = 0
+    barometer_temperature_bias: float = 0.0
+    barometer_temperature_scale_factor: float = 0.0
     barometer_name: str = "Barometer"
     barometer_position: tuple = (0.265, 0, 0)
 
@@ -99,51 +97,66 @@ class RocketConfig:
 
 
 class KalmanAltitudeFilter:
-    """Kalman filter for altitude and velocity estimation"""
+    """Kalman filter for altitude and velocity estimation matching Arduino implementation"""
+
     def __init__(self, config: ControllerConfig):
         self.config = config
-        self.kf = None
+        self.K = KalmanFilter(dim_x=3, dim_z=1)  # (y, v, a)
         self.initialized = False
         self.previous_time = None
+        self.obs = np.zeros((1, 1))  # observation vector
 
     def initialize(self, initial_altitude_agl: float, sampling_rate: int):
-        """Initialize filter"""
-        self.kf = KalmanFilter(dim_x=3, dim_z=1)
-        self.kf.x = np.array([initial_altitude_agl, 0.0, 0.0])
+        """Initialize filter matching Arduino structure"""
         dt = 1.0 / sampling_rate
-        self._update_matrices(dt, is_burning=True)
-        self.kf.P = np.diag([1.0, 5.0, 20.0])
+
+        # State evolution matrix (updated with DT)
+        self.K.F = np.array([[1.0, dt, dt * dt / 2],
+                             [0.0, 1.0, dt],
+                             [0.0, 0.0, 1.0]])
+
+        # State to measurement
+        self.K.H = np.array([[1, 0, 0]])
+
+        # Measurement covariance
+        self.K.R = np.array([[self.config.sensor_std * self.config.sensor_std]])
+
+        # Model covariance matrix
+        self.K.Q = np.array([[self.config.model_y_std * self.config.model_y_std, 0, 0],
+                             [0, self.config.model_v_std * self.config.model_v_std, 0],
+                             [0, 0, self.config.model_a_std * self.config.model_a_std]])
+
+        self.K.x = np.array([initial_altitude_agl, 0.0, 0.0])
         self.initialized = True
 
-    def _update_matrices(self, dt: float, is_burning: bool):
-        """Update filter matrices"""
-        decay = self.config.acceleration_decay_burn if is_burning else self.config.acceleration_decay_coast
-        self.kf.F = np.array([[1, dt, 0.5 * dt ** 2], [0, 1, dt], [0, 0, decay]])
-        self.kf.H = np.array([[1, 0, 0]])
-        self.kf.R = np.array([[self.config.sensor_noise_variance]])
-        q_var = self.config.process_noise_burn if is_burning else self.config.process_noise_coast
-        self.kf.Q = Q_discrete_white_noise(dim=3, dt=dt, var=q_var)
-        self.kf.Q[1, 1] *= self.config.velocity_process_boost
-
     def update(self, measurement_agl: float, time: float, motor_burn_time: float):
-        """Update filter with barometer measurement and return altitude and velocity."""
+        """Update filter with barometer measurement matching Arduino structure"""
         if not self.initialized:
             raise RuntimeError("Filter not initialized")
 
         dt = time - self.previous_time if self.previous_time is not None else 1.0 / self.config.sampling_rate
         dt = max(dt, 1e-6)
-        is_burning = time < motor_burn_time
 
-        self._update_matrices(dt, is_burning)
-        self.kf.predict()
-        self.kf.update(np.array([[measurement_agl]]))
+        # Update state transition matrix with new dt
+        decay = self.config.acceleration_decay_burn if time < motor_burn_time else self.config.acceleration_decay_coast
+        self.K.F = np.array([[1.0, dt, dt * dt / 2],
+                             [0.0, 1.0, dt],
+                             [0.0, 0.0, decay]])
+
+        # Create measurement matrix
+        self.obs[0] = measurement_agl
+
+        # Kalman update
+        self.K.predict()
+        self.K.update(self.obs)
         self.previous_time = time
 
-        return float(self.kf.x[0]), float(self.kf.x[1])
+        return float(self.K.x[0]), float(self.K.x[1])
 
 
 class AirbrakeController:
     """Airbrake controller"""
+
     def __init__(self, config: ControllerConfig, motor_burn_time: float):
         self.config = config
         self.motor_burn_time = motor_burn_time
@@ -211,7 +224,7 @@ class AirbrakeController:
         return None, False
 
     def _predict_apogee(self, altitude_agl: float, velocity: float):
-        """Apogee predictor for control algorithm"""
+        """Apogee prediction considering drag and gravity in 1D"""
         if velocity <= 0:
             return altitude_agl
 
@@ -258,12 +271,7 @@ class AirbrakeController:
 
     def control(self, time: float, sampling_rate: int, state: np.ndarray,
                 state_history, observed_variables, air_brakes, sensors):
-        """
-        Main control function - consistently uses AGL coordinates.
-
-        Args:
-            state: RocketPy state vector where state[2] is altitude ASL
-        """
+        """Main control function"""
 
         # Convert ASL to AGL for all calculations
         true_altitude_asl = state[2]
@@ -292,8 +300,7 @@ class AirbrakeController:
                 # Update filter with AGL altitude, get AGL results
                 filtered_altitude_agl, filtered_velocity = self.filter.update(
                     barometer_altitude_agl, time, self.motor_burn_time)
-
-            # Predict apogee in AGL coordinates
+            # Predict apogee using original method
             predicted_apogee_agl = self._predict_apogee(filtered_altitude_agl, filtered_velocity)
 
             # Control logic. Only active after motor burnout and with positive velocity
@@ -316,7 +323,6 @@ class AirbrakeController:
         self.data['control_active'].append(control_active)
 
         return time, deployment_level, predicted_apogee_agl
-
 
 class SimulationRunner:
     def __init__(self, config: ControllerConfig, rocket_config: RocketConfig):
