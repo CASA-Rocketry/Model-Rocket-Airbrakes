@@ -3,6 +3,9 @@
 #define MISO 12
 #define MOSI 11
 
+
+
+
 unsigned long timeMillis = 0, timeNewMillis;
 float dt;
 
@@ -25,10 +28,11 @@ void setup() {
   //Initialize hardware
   initializeLED();
   initializeLog();
-  Serial.println("Initialized log");
   initializeAlt();
+  initializeIMU();
   initializeServo();
   initializeKalmanFilter(); 
+  setGreenLED(HIGH); //Signify successful
 }
 
 void loop() {

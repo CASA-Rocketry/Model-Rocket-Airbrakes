@@ -1,13 +1,7 @@
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h>
-
-//Pin constants
-#define ALT_CS 6
+#include <Arduino_LPS22HB.h>
 
 //Parameter constnats
-#define SEALEVELPRESSURE_HPA (1010.0)
+#define SEALEVEL_PRESSURE_KPA 101.325
 
 #define CALIBRATION_POINT 0.0
 #define CALIBRATION_SAMPLE_SIZE 100
@@ -15,20 +9,21 @@
 
 float offset;
 
-Adafruit_BME280 alt(ALT_CS);
-
 void initializeAlt(){
-  unsigned status = alt.begin();
-  if(!status){
-    Serial.println("ERROR initializing alt");
+  if(!BARO.begin()){
+    Serial.println("ERROR Initilizing Altimeter");
     enterErrorMode(1);
   }
+
   calibrateAlt();
 }
 
+
 float getRawAlt(){
-  return alt.readAltitude(SEALEVELPRESSURE_HPA);
+  float pressure = BARO.readPressure();
+  return 44330 * ( 1 - pow(pressure/SEALEVEL_PRESSURE_KPA, 1/5.255)); //TODO: update with temperature information
 }
+
 
 float getCalibratedAlt(){
   return getRawAlt() + offset;
@@ -40,13 +35,13 @@ void calibrateAlt(){
     sum += getRawAlt();
     //LED blinking
     if(i % 10 == 5)
-      setLED(HIGH);
+      setGreenLED(HIGH);
     else if(i % 10 == 0)
-      setLED(LOW);
+      setGreenLED(LOW);
 
     delay(CALIBRATION_SAMPLE_RATE);
   }
-  setLED(LOW);
+  setGreenLED(LOW);
     
   float average = sum / CALIBRATION_SAMPLE_SIZE;
   offset = CALIBRATION_POINT - average;

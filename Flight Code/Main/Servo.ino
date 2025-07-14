@@ -1,6 +1,8 @@
 #include <Servo.h>
 
-#define SERVO_PIN 3
+#define PWM1 3
+#define PWM2 5
+#define PWM3 6
 
 //Constnats
 #define MIN_DEPLOYMENT_DEGREES 0
@@ -9,7 +11,7 @@
 Servo servo;
 
 void initializeServo(){
-  servo.attach(SERVO_PIN);
+  servo.attach(PWM1);
   setServoDeployment(0);
 }
 
