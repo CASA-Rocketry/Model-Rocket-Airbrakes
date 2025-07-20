@@ -49,6 +49,6 @@ void newLogLine(){
 void updateLogs(){
   newLogLine();
   logAltimeter();
-  logControl();
+  //logControl();
 }
 

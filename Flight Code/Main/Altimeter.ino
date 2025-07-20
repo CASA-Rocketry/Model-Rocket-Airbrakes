@@ -50,6 +50,9 @@ void calibrateAlt(){
 }
 
 void logAltimeter(){
-  logItem(getCalibratedAlt());
+  float altitude = getCalibratedAlt();
+
+  //Serial.println(altitude);
+  logItem(altitude);
 }
 

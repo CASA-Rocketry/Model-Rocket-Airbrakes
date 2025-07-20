@@ -7,11 +7,11 @@ void initializeLED(){
 }
 
 void setRedLED(int value){
-  digitalWrite(LED1, value);
+  digitalWrite(LED2, value);
 }
 
 void setGreenLED(int value){
-  digitalWrite(LED2, value);
+  digitalWrite(LED1, value);
 }
 
 //Shuts down active control and displays error message. code is a positive integer and corresponds to different failure points
