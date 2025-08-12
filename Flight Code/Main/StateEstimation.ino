@@ -1,82 +1,72 @@
-// #include <Kalman.h>
-// using namespace BLA;
-
-// // //Physical constants
-// #define g 9.8
-
-// //Matrix dimensions
-// #define NUM_STATE 3 //(y, v, a)
-// #define NUM_OBS 1 //(y)
+#include <BasicLinearAlgebra.h>
 
 // //Noise estimates
-// #define ALT_STD 0.278001153 //noise of position observation
+#define ALT_STD 0.173932 //noise of position observation
 // //#define ACC_STD 
-// #define MODEL_Y_STD 0.1
-// #define MODEL_V_STD 0.1
-// #define MODEL_A_STD 0.1
+#define MODEL_Y_STD 0.01
+#define MODEL_V_STD 0.01
+#define MODEL_A_STD 0.01
 
-// BLA::Matrix<NUM_OBS> obs; //observation vector
-// KALMAN<NUM_STATE, NUM_OBS> K; //Kalman filter
-
-// void initializeKalmanFilter(){
-//   K.F = {1.0, 0, 0,
-//         0, 1.0, 0,
-//         0, 0, 1.0}; //State evolution (updated with DT)
-//   K.H = {1, 0, 0}; //State to measurement
-//   K.R = {ALT_STD * ALT_STD}; //Measurement covariance
-//   K.Q = {MODEL_Y_STD * MODEL_Y_STD, 0, 0,
-//           0, MODEL_V_STD * MODEL_V_STD, 0,
-//           0, 0, MODEL_A_STD * MODEL_A_STD}; //Model covariance matrix
-// }
-
-// void updateKalmanFilter(float dT){
-//   float altitudeReading = getCalibratedAlt();
-  
-//   obs.Fill(altitudeReading); //Create measurement matrix
-//   //Update state transition matrix
-//   K.F = {1.0,  dt,  dt*dt/2,
-// 		    0.0,  1.0,   dt,
-//          0.0, 0.0,  1.0};
-
-//   K.update(obs);
-
-//   //Print output for tuning
-//   Serial.print("alt:");
-//   Serial.print(altitudeReading);
-//   Serial.print(", ");
-  
-//   Serial.print("Kx0:");
-//   Serial.print(K.x(0));
-//   Serial.print(", ");
-//   Serial.print("Kx1:");
-//   Serial.print(K.x(1));
-//   Serial.print(", ");
-//   Serial.print("Kx2:");
-//   Serial.println(K.x(2));
+BLA::Matrix<3, 3> I = {1, 0, 0,
+                       0, 1, 0,
+                       0, 0, 1}; //3x3 identity matrix used for later
+BLA::Matrix<3> x = {0, 0, 0}; //state estimate
+BLA::Matrix<1> z = {0}; //measurement
+BLA::Matrix<3, 3> phi = I; //state transition
+BLA::Matrix<1, 3> H = {1, 0, 0}; //state to measurement
+BLA::Matrix<1> R = {ALT_STD * ALT_STD}; //measurement covariance
+BLA::Matrix<3, 3> Q = {MODEL_Y_STD * MODEL_Y_STD, 0, 0,
+                                      0, MODEL_V_STD * MODEL_V_STD, 0,
+                                      0, 0, MODEL_A_STD * MODEL_A_STD}; //Process covariance
+BLA::Matrix <3, 3> P = I; //Error covariance
+BLA::Matrix <3> K; //Kalman gain
 
 
-// }
+void updateKalmanFilter(){
+  //Add data
+  z(0) = getCalibratedAlt();
+  phi = {1, dt, 0.5 * dt * dt,
+         0, 1, dt,
+         0, 0, 1};
+
+  //Update Kalman Gain
+  K = P * ~H * Inverse((H * P * ~H + R));
+  //Serial.println(K);
+  //Update Estimate
+  x = x + K * (z - H * x);
+  //Serial.println(x);
+  //Update Covariance
+  P = (I - K * H) * P;
+  //Serial.println(P);
+  //Project to next time stamp
+  x = phi * x;
+  P = phi * P * ~phi + Q;
+}
 
 
 
-// void logControl(){
-//   logItem(K.x(0));
-//   logItem(K.x(1));
-//   logItem(K.x(2));
-//   logItem(getPredictedApogee());
-// }
+void logStateEstimation(){
+  logItem(getYEstimate());
+  logItem(getVEstimate());
+  logItem(getAEstimate());
+  //logItem(getPredictedApogee());
+
+  //Serial output
+  Serial.print("estimate:");
+  Serial.print(getYEstimate());
+  Serial.print(", ");
+  Serial.print("measurement:");
+  Serial.println(z(0));
+}
 
 float getYEstimate(){
-//   return K.x(0);
-return 0;
+  return x(0);
 }
 
 float getVEstimate(){
-//    return K.x(1);
-  return 0;
+  return x(1);
 }
 
 float getAEstimate(){
-//   return K.x(2);
-  return 0;
+  return x(2);
 }

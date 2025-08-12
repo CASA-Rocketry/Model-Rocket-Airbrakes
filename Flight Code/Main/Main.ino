@@ -1,4 +1,4 @@
-#define DEBUG true
+ #define DEBUG true
 
 //Shared pin definitions
 #define SCK 13
@@ -21,9 +21,12 @@ enum FlightMode {
 } mode = LAUNCH_PAD;
 
 void setup() {
-  Serial.begin(9600);
-  if(DEBUG)
+  
+  if(DEBUG){
+    Serial.begin(9600);
     while(!Serial);
+  }
+    
   
   //Initialize hardware
   initializeLED();
@@ -41,10 +44,10 @@ void loop() {
   dt = (timeNewMillis - timeMillis)/1000.0;
   timeMillis = timeNewMillis;
 
-  //updateKalmanFilter(dt);
+  updateKalmanFilter();
   updateLogs();
   updateAcceleration();
-  Serial.println(getVerticalAcceleration());
+  //Serial.println(getVerticalAcceleration());
 
   
 
@@ -85,5 +88,5 @@ void loop() {
       landMillis = millis();
   }
 
-  delay(50);
+  delay(20);
 }
