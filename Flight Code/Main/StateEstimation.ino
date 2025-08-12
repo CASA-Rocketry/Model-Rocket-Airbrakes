@@ -52,11 +52,11 @@ void logStateEstimation(){
   //logItem(getPredictedApogee());
 
   //Serial output
-  Serial.print("estimate:");
-  Serial.print(getYEstimate());
-  Serial.print(", ");
-  Serial.print("measurement:");
-  Serial.println(z(0));
+  // Serial.print("estimate:");
+  // Serial.print(getYEstimate());
+  // Serial.print(", ");
+  // Serial.print("measurement:");
+  // Serial.println(z(0));
 }
 
 float getYEstimate(){

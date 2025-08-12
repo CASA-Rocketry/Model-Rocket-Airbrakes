@@ -1,4 +1,4 @@
- #define DEBUG true
+ #define DEBUG false
 
 //Shared pin definitions
 #define SCK 13
@@ -21,13 +21,6 @@ enum FlightMode {
 } mode = LAUNCH_PAD;
 
 void setup() {
-  
-  if(DEBUG){
-    Serial.begin(9600);
-    while(!Serial);
-  }
-    
-  
   //Initialize hardware
   initializeLED();
   initializeLog();
@@ -46,8 +39,8 @@ void loop() {
 
   updateKalmanFilter();
   updateLogs();
-  updateAcceleration();
-  //Serial.println(getVerticalAcceleration());
+  updateIMU();
+  Serial.println(mode);
 
   
 
@@ -55,38 +48,46 @@ void loop() {
   //Mange flight states
   switch(mode){
     case LAUNCH_PAD:
-      if (getVerticalAcceleration() > 50){
+      setLEDColor(255, 0, 0); //RED
+      Serial.println(getVerticalAcceleration());
+      if (getVerticalAcceleration() > 20){
         mode = THRUST;
-        launchMillis = millis();
+        launchMillis = timeMillis;
       }
       else
         break;
     case THRUST:
-      if((timeMillis - launchMillis)/1000.0 > BURN_TIME)
+      setLEDColor(240, 122, 5); //Orange
+      Serial.println((timeMillis - launchMillis)/1000.0);
+      if((timeMillis - launchMillis)/1000.0 > BURN_TIME) //Care that these are UNSIGNED longs
         mode = COAST;
       else
         break;
     case COAST:
+      setLEDColor(255, 247, 0); //Yellow
       runApogeeControl();
       if (getVEstimate() < 0)
         mode = RECOVERY;
       else
         break;
     case RECOVERY:
+      setLEDColor(0, 255, 0); //Green
       runTimeControl();
       if(getYEstimate() < 10)
         mode = LANDING;
       else 
         break;
     case LANDING:
+      setLEDColor(0, 0, 255); //Blue
       setServoDeployment(0);
       if(abs(getVEstimate()) < 0.2)
         mode = LANDED;
       else
         break;
     case LANDED:
+      setLEDColor(247, 0, 255); //Purple
       landMillis = millis();
   }
 
-  delay(20);
+  delay(10);
 }

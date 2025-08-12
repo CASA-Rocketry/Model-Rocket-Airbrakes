@@ -1,10 +1,20 @@
 #include "Arduino_BMI270_BMM150.h"
+float gx, gy, gz, ax, ay, az, mx, my, mz;
 
-#define g 9.8
 
-float a_x = 0;
-float a_y = 0;
-float a_z = 0;
+
+void updateIMU(){
+  if(IMU.accelerationAvailable())
+    IMU.readAcceleration(az, ax, ay); //Redefined reference frame
+  
+  // if(IMU.accelerationAvailable())
+  //   IMU.readAcceleration(ax, ay, az);
+  // if(IMU.gyroscopeAvailable())
+  //   IMU.readGyroscope(gx, gy, gz);
+  // if(IMU.magneticFieldAvailable())
+  //   IMU.readMagneticField(mx, my, mz);
+
+}
 
 void initializeIMU(){
   if(!IMU.begin()){
@@ -14,16 +24,15 @@ void initializeIMU(){
 }
 
 void updateAcceleration(){
-  if(IMU.accelerationAvailable()){
-    IMU.readAcceleration(a_z, a_x, a_y); //Redefined reference frame
-  }
+  
+
 }
 
 //Assumes rocket is in vertical flight
 float getVerticalAcceleration(){
-  return g * (a_z - 1);
+  return 9.8 * (az - 1.0);
 }
 
 float getDragAcceleration(){
-  return g * sqrt(a_x*a_x + a_y*a_y + a_z*a_z);
+  return 0;//g * sqrt(ax*ax + ay*ay + az*az);
 }

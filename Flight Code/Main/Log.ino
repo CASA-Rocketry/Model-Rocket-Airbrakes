@@ -1,3 +1,5 @@
+//Log.ino includes both in-flight SD logging and debugging serial management since they utilitze the same framework
+
 #include <SPI.h>
 #include <SD.h>
 #include <string.h>
@@ -7,6 +9,10 @@
 File flightFile;
 
 void initializeLog(){
+  if(DEBUG){
+    Serial.begin(9600);
+    while(!Serial);
+  }
 
   if(!SD.begin(SD_CS)){
     Serial.println("ERROR initializing log");
@@ -50,5 +56,11 @@ void updateLogs(){
   newLogLine();
   logAltimeter();
   logStateEstimation();
+}
+
+void serialTag(String name, float value){
+  Serial.print(name + ':');
+  Serial.print(value);
+  Serial.print(", ");
 }
 

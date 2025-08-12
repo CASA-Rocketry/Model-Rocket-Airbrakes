@@ -33,4 +33,8 @@ void enterErrorMode(int code){
 }
 
 
-
+void setLEDColor(int r, int g, int b){
+  analogWrite(LEDR, 255 - r); //High and low are inverted
+  analogWrite(LEDG, 255 - g);
+  analogWrite(LEDB, 255 - b);
+}
