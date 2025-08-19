@@ -45,19 +45,7 @@ void updateKalmanFilter(){
 
 
 
-void logStateEstimation(){
-  logItem(getYEstimate());
-  logItem(getVEstimate());
-  logItem(getAEstimate());
-  //logItem(getPredictedApogee());
 
-  //Serial output
-  // Serial.print("estimate:");
-  // Serial.print(getYEstimate());
-  // Serial.print(", ");
-  // Serial.print("measurement:");
-  // Serial.println(z(0));
-}
 
 float getYEstimate(){
   return x(0);

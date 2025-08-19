@@ -7,12 +7,9 @@ void updateIMU(){
   if(IMU.accelerationAvailable())
     IMU.readAcceleration(az, ax, ay); //Redefined reference frame
   
-  // if(IMU.accelerationAvailable())
-  //   IMU.readAcceleration(ax, ay, az);
-  // if(IMU.gyroscopeAvailable())
-  //   IMU.readGyroscope(gx, gy, gz);
-  // if(IMU.magneticFieldAvailable())
-  //   IMU.readMagneticField(mx, my, mz);
+  logLine[2] = String(ax);
+  logLine[3] = String(ay);
+  logLine[4] = String(az);
 
 }
 

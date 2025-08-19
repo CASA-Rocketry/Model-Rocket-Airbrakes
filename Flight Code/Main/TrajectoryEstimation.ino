@@ -1,11 +1,13 @@
 //Uses the current servo deployment to calculate the new drag coefficient
 float getDragCoefficient(){
-  return 0 + 0*servoDeployment; //TODO: determine these constants or use a more sophisticated model. 
+  return 0;//TODO: determine these constants or use a more sophisticated model. 
 }
 
 //Returns estimated apogee in meters
 float getApogeeEstimate(){
-  return 0;
+  float apogeeEstimate = 0; //Insert math here
+  logLine[6] = String(apogeeEstimate);
+  return apogeeEstimate;
 }
 
 //Returns estiamted flight time in seconds

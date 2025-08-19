@@ -10,23 +10,34 @@
 float offset;
 
 void initializeAlt(){
-  if(!BARO.begin()){
-    Serial.println("ERROR Initilizing Altimeter");
-    enterErrorMode(1);
+  if(!SIMULATION){
+    if(!BARO.begin()){
+      Serial.println("ERROR Initilizing Altimeter");
+      enterErrorMode(1);
+    }
   }
 
   calibrateAlt();
 }
 
+double getPressure(){
+  if(SIMULATION)
+    return getSimPressure();
+  return BARO.readPressure();
+}
 
 float getRawAlt(){
-  float pressure = BARO.readPressure();
-  return 44330 * ( 1 - pow(pressure/SEALEVEL_PRESSURE_KPA, 1/5.255)); //TODO: update with temperature information
+  double pressure = getPressure();
+  logLine[1] = String(pressure);
+  return 44330.0 * ( 1 - pow(pressure/SEALEVEL_PRESSURE_KPA, 1/5.255)); //TODO: update with temperature information
 }
 
 
 float getCalibratedAlt(){
-  return getRawAlt() + offset;
+  float calibratedAlt = getRawAlt() + offset;
+  logLine[5] = String(calibratedAlt);
+
+  return calibratedAlt;
 }
 
 void calibrateAlt(){
@@ -47,12 +58,5 @@ void calibrateAlt(){
   offset = CALIBRATION_POINT - average;
   Serial.print("Calibration complete! ... Average: ");
   Serial.println(average);
-}
-
-void logAltimeter(){
-  float altitude = getCalibratedAlt();
-
-  //Serial.println(altitude);
-  logItem(altitude);
 }
 

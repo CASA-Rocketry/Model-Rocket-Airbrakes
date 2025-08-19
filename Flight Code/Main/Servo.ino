@@ -6,10 +6,10 @@
 
 //Constnats
 #define MIN_DEPLOYMENT_DEGREES 0
-#define MAX_DEPLOYMENT_DEGREES 180
+#define MAX_DEPLOYMENT_DEGREES 135
 
 Servo servo;
-float servoDeployment = 0;
+
 
 void initializeServo(){
   servo.attach(PWM1);
@@ -18,9 +18,9 @@ void initializeServo(){
 
 
 //Deployment ranges from 0 to 1
-void setServoDeployment(double deployment){
+void setServoDeployment(float deployment){
+  logLine[7] = String(deployment);
   double clampedDeployment = clamp(deployment, 0, 1); //May remove if this is verified earlier
-  servoDeployment = clampedDeployment;
   double angle = MIN_DEPLOYMENT_DEGREES + (MAX_DEPLOYMENT_DEGREES - MIN_DEPLOYMENT_DEGREES) * clampedDeployment;
   
   servo.write(angle);

@@ -2,14 +2,13 @@
 
 #include <SPI.h>
 #include <SD.h>
-#include <string.h>
+#include <String>
 
 #define SD_CS 10
-
 File flightFile;
 
 void initializeLog(){
-  if(DEBUG){
+  if(SERIAL){
     Serial.begin(9600);
     while(!Serial);
   }
@@ -19,6 +18,22 @@ void initializeLog(){
     enterErrorMode(2);
   }
 
+  if (SIMULATION)
+    loadSim();
+  else
+    loadFlight();
+}
+
+void loadSim(){
+    flightFile = SD.open("SIM.csv");
+
+    if(!flightFile){
+      Serial.println("ERROR opening flight file");
+      enterErrorMode(3);
+  } 
+}
+
+void loadFlight(){
 //Create flight file
   int flightNumber = 1;
   String fileName;
@@ -34,29 +49,20 @@ void initializeLog(){
     enterErrorMode(3);
   }
   Serial.println("Successfully logging to " + fileName);
-  flightFile.print("Time, Raw Altitude, Ky, Kv, Ka, y max predicted");
+  updateSD();
 }
 
 void endLog(){
   flightFile.close();
 }
 
-void logItem(double value){
-  flightFile.print(value);
-  flightFile.print(',');
-}
-
-void newLogLine(){
+void updateSD(){
+  for(int i = 0; i < ITEMS_LOGGED; i++){
+    flightFile.print(logLine[i] + ((i == ITEMS_LOGGED - 1) ? '\n' : ','));
+  }
   flightFile.flush(); //Save new data to SD card
-  flightFile.print('\n');
-  logItem(millis()/1000.0);
 }
 
-void updateLogs(){
-  newLogLine();
-  logAltimeter();
-  logStateEstimation();
-}
 
 void serialTag(String name, float value){
   Serial.print(name + ':');
