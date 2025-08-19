@@ -5,8 +5,9 @@ float gx, gy, gz, ax, ay, az, mx, my, mz;
 
 void updateIMU(){
   if(IMU.accelerationAvailable())
-    IMU.readAcceleration(az, ax, ay); //Redefined reference frame
+    IMU.readAcceleration(ay, az, ax); //Redefined reference frame
   
+  az *= -1;
   logLine[2] = String(ax);
   logLine[3] = String(ay);
   logLine[4] = String(az);
