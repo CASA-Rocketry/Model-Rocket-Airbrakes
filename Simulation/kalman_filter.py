@@ -1,47 +1,108 @@
 import numpy as np
-from filterpy.kalman import KalmanFilter
-from filterpy.common import Q_discrete_white_noise
 from config import ControllerConfig
+
 
 class KalmanAltitudeFilter:
     """Kalman filter for altitude and velocity estimation"""
+
+    # Noise estimates
+    ALT_STD = 0.173932
+    MODEL_Y_STD = 0.01
+    MODEL_V_STD = 0.01
+    MODEL_A_STD = 0.01
+
     def __init__(self, config: ControllerConfig):
         self.config = config
-        self.kf = None
         self.initialized = False
         self.previous_time = None
 
+        # State estimate vector [position, velocity, acceleration]
+        self.x = np.array([[0.0], [0.0], [0.0]])
+
+        # Measurement vector
+        self.z = np.array([[0.0]])
+
+        # 3x3 identity matrix
+        self.I = np.eye(3)
+
+        # State transition matrix (phi in Arduino)
+        self.phi = np.eye(3)
+
+        # State to measurement matrix
+        self.H = np.array([[1.0, 0.0, 0.0]])
+
+        # Measurement covariance
+        self.R = np.array([[self.ALT_STD * self.ALT_STD]])
+
+        # Process covariance
+        self.Q = np.array([
+            [self.MODEL_Y_STD * self.MODEL_Y_STD, 0.0, 0.0],
+            [0.0, self.MODEL_V_STD * self.MODEL_V_STD, 0.0],
+            [0.0, 0.0, self.MODEL_A_STD * self.MODEL_A_STD]
+        ])
+
+        # Error covariance
+        self.P = np.eye(3)
+
+        # Kalman gain
+        self.K = np.zeros((3, 1))
+
     def initialize(self, initial_altitude_agl: float, sampling_rate: int):
-        """Initialize filter"""
-        self.kf = KalmanFilter(dim_x=3, dim_z=1)
-        self.kf.x = np.array([initial_altitude_agl, 0.0, 0.0])
-        dt = 1.0 / sampling_rate
-        self._update_matrices(dt, is_burning=True)
-        self.kf.P = np.diag([1.0, 5.0, 20.0])
+        """Initialize filter with initial altitude"""
+        self.x = np.array([[initial_altitude_agl], [0.0], [0.0]])
+        self.P = np.eye(3)  # Reset to identity matrix
         self.initialized = True
 
-    def _update_matrices(self, dt: float, is_burning: bool):
-        """Update filter matrices"""
-        decay = self.config.acceleration_decay_burn if is_burning else self.config.acceleration_decay_coast
-        self.kf.F = np.array([[1, dt, 0.5 * dt ** 2], [0, 1, dt], [0, 0, decay]])
-        self.kf.H = np.array([[1, 0, 0]])
-        self.kf.R = np.array([[self.config.sensor_noise_variance]])
-        q_var = self.config.process_noise_burn if is_burning else self.config.process_noise_coast
-        self.kf.Q = Q_discrete_white_noise(dim=3, dt=dt, var=q_var)
-        self.kf.Q[1, 1] *= self.config.velocity_process_boost
-
-    def update(self, measurement_agl: float, time: float, motor_burn_time: float):
-        """Update filter with barometer measurement and return altitude and velocity."""
+    def updateKalmanFilter(self, measurement_agl: float, dt: float):
         if not self.initialized:
             raise RuntimeError("Filter not initialized")
 
-        dt = time - self.previous_time if self.previous_time is not None else 1.0 / self.config.sampling_rate
-        dt = max(dt, 1e-6)
-        is_burning = time < motor_burn_time
+        # Add data
+        self.z[0, 0] = measurement_agl
 
-        self._update_matrices(dt, is_burning)
-        self.kf.predict()
-        self.kf.update(np.array([[measurement_agl]]))
+        # Update phi
+        self.phi = np.array([
+            [1.0, dt, 0.5 * dt * dt],
+            [0.0, 1.0, dt],
+            [0.0, 0.0, 1.0]
+        ])
+
+        # Update Kalman Gain
+        HPH_R = self.H @ self.P @ self.H.T + self.R
+        self.K = self.P @ self.H.T @ np.linalg.inv(HPH_R)
+
+        # Update Estimate
+        innovation = self.z - self.H @ self.x
+        self.x = self.x + self.K @ innovation
+
+        # Update Covariance
+        self.P = (self.I - self.K @ self.H) @ self.P
+
+        # Project to next time stamp
+        self.x = self.phi @ self.x
+
+        self.P = self.phi @ self.P @ self.phi.T + self.Q
+
+    def update(self, measurement_agl: float, time: float, motor_burn_time: float):
+        # Calculate dt
+        if self.previous_time is not None:
+            dt = time - self.previous_time
+        else:
+            dt = 1.0 / self.config.sampling_rate
+
+        dt = max(dt, 1e-6)  # Prevent zero dt
+
+        # Update the Kalman filter
+        self.updateKalmanFilter(measurement_agl, dt)
+
         self.previous_time = time
 
-        return float(self.kf.x[0]), float(self.kf.x[1])
+        return self.getYEstimate(), self.getVEstimate()
+
+    def getYEstimate(self):
+        """Get position estimate"""
+        return float(self.x[0, 0])
+
+    def getVEstimate(self):
+        """Get velocity estimate"""
+        return float(self.x[1, 0])
