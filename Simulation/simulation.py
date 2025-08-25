@@ -23,8 +23,8 @@ class SimulationRunner:
             radius=self.config.rocket_radius,
             mass=0.45,
             inertia=(0.001, 0.001, 0.0001),
-            power_off_drag="RocketDragCurve.csv",
-            power_on_drag="RocketDragCurve.csv",
+            power_off_drag="rocket_drag_curve.csv",
+            power_on_drag="rocket_drag_curve.csv",
             center_of_mass_without_motor=0.35,
             coordinate_system_orientation="nose_to_tail",
         )
@@ -45,10 +45,16 @@ class SimulationRunner:
             lag=0, noise=(0, 8.3, 0.5))
 
         barometer = Barometer(
-            sampling_rate=50, measurement_range=100000, resolution=0.1,
-            noise_density=0.3, noise_variance=2.0, random_walk_density=0.01,
-            constant_bias=0.2, operating_temperature=25,
-            temperature_bias=0.005, temperature_scale_factor=0.005,
+            sampling_rate=50,
+            measurement_range=100000,
+            resolution=0.2,  # 0.2 Pa resolution as per datasheet
+            noise_density=0.0,
+            noise_variance=(0.75) ** 2,  # Variance ≈ (0.75 Pa RMS)² ≈ 0.56 Pa²
+            random_walk_density=0.0,
+            constant_bias=10.0,
+            operating_temperature=25,
+            temperature_bias=0.0,  # unspecified in datasheet
+            temperature_scale_factor=0.0,  # unspecified
             name="Barometer"
         )
         rocket.add_sensor(barometer, position=(0.265, 0, 0))
@@ -56,7 +62,7 @@ class SimulationRunner:
         self.controller = AirbrakeController(self.config, motor.burn_out_time)
 
         rocket.add_air_brakes(
-            drag_coefficient_curve="air_brakes_cd.csv",
+            drag_coefficient_curve="airbrake_drag_curve.csv",
             controller_function=self.controller.control,
             sampling_rate=self.config.sampling_rate,
             reference_area=self.config.airbrake_area,
@@ -121,7 +127,7 @@ class SimulationRunner:
                 print(f"Warning: Could not add flight data: {e}")
 
             # Export to CSV
-            filename = 'Rocket_Flight_Data.csv'
+            filename = 'rocket_flight_data.csv'
             df.to_csv(filename, index=False)
             print(f"\nData exported to {filename}")
             print(f"Rows: {len(df)}, Columns: {len(df.columns)}")

@@ -3,17 +3,21 @@ import numpy as np
 from kalman_filter import KalmanAltitudeFilter
 from config import ControllerConfig
 
+
 class AirbrakeController:
-    """Airbrake controller"""
+    """Airbrake controller - matches Arduino control logic"""
+
     def __init__(self, config: ControllerConfig, motor_burn_time: float):
         self.config = config
         self.motor_burn_time = motor_burn_time
         self.filter = KalmanAltitudeFilter(config)
-        self.sea_level_pressure = 101325.0
+
+        # Use config values instead of hardcoded constants
+        self.sea_level_pressure = config.sealevel_pressure_kpa * 1000  # Convert to Pa
         self.ground_pressure = None  # Will be calibrated from first reading
         self.ground_pressure_calibrated = False
         self.calibration_readings = []  # Store multiple readings for better calibration
-        self.calibration_samples = 5  # Number of samples for calibration
+        self.calibration_samples = config.calibration_sample_size  # Use config value
 
         # Data storage
         self.data = {
@@ -23,12 +27,12 @@ class AirbrakeController:
         }
 
     def _calibrate_barometer(self, pressure_pa: float):
-        """Calibrate barometer using multiple readings."""
+        """Calibrate barometer using multiple readings - matches Arduino calibrateAlt()"""
         if not self.ground_pressure_calibrated:
             self.calibration_readings.append(pressure_pa)
 
             if len(self.calibration_readings) >= self.calibration_samples:
-                # Use average of calibration readings
+                # Use average of calibration readings - matches Arduino calibration logic
                 self.ground_pressure = np.mean(self.calibration_readings)
                 self.ground_pressure_calibrated = True
                 std_dev = np.std(self.calibration_readings)
@@ -40,7 +44,7 @@ class AirbrakeController:
         return True
 
     def _read_barometer(self, sensors):
-        """Read barometer and return AGL altitude."""
+        """Read barometer and return AGL altitude - matches Arduino getRawAlt() and getCalibratedAlt()"""
         for sensor in sensors:
             if (hasattr(sensor, 'measured_data') and sensor.name == "Barometer" and
                     hasattr(sensor, 'measurement') and sensor.measurement is not None):
@@ -53,10 +57,11 @@ class AirbrakeController:
                     if not self._calibrate_barometer(pressure_pa):
                         return None, False
 
-                    # Convert pressure to altitude AGL using calibrated ground pressure
+                    # Convert pressure to altitude AGL - matches Arduino formula
+                    # Arduino: 44330.0 * ( 1 - pow(pressure/SEALEVEL_PRESSURE_KPA, 1/5.255))
                     if self.ground_pressure and self.ground_pressure > 0:
                         # Use the barometric formula relative to ground pressure
-                        altitude_agl = 44330 * (1 - (pressure_pa / self.ground_pressure) ** 0.1903)
+                        altitude_agl = 44330 * (1 - (pressure_pa / self.ground_pressure) ** (1 / 5.255))
 
                         # Sanity check for reasonable altitude values
                         if altitude_agl < -10 or altitude_agl > 1000:
@@ -72,7 +77,7 @@ class AirbrakeController:
         return None, False
 
     def _predict_apogee(self, altitude_agl: float, velocity: float):
-        """Apogee predictor for control algorithm"""
+        """Apogee predictor for control algorithm - matches Arduino getApogeeEstimate()"""
         if velocity <= 0:
             return altitude_agl
 
@@ -96,41 +101,41 @@ class AirbrakeController:
 
         return predicted_apogee_agl
 
-    def _calculate_deployment(self, predicted_apogee_agl: float, velocity: float, current_deployment: float,
-                              sampling_rate: int):
-        """Calculate airbrake deployment based on AGL apogee prediction."""
+    def _calculate_deployment(self, predicted_apogee_agl: float, velocity: float,
+                              current_deployment: float, sampling_rate: int):
+        """Calculate airbrake deployment with smooth rate limiting (slew rate control)."""
         error = predicted_apogee_agl - self.config.target_apogee
         if error <= 0:
-            return 0.0
+            desired_deployment = 0.0
+        else:
+            velocity_factor = max(velocity ** 2 + 15.0, 1.0)
+            kp = self.config.kp_base / velocity_factor
+            desired_deployment = kp * error
 
-        velocity_factor = max(velocity ** 2 + 15.0, 1.0)
-        kp = self.config.kp_base / velocity_factor
-        new_deployment = kp * error
+        # Clamp target deployment [0, 1]
+        desired_deployment = float(np.clip(desired_deployment, 0.0, 1.0))
 
-        # Rate limiting
-        max_change = self.config.max_deployment_rate / sampling_rate
-        lower_bound = max(0, current_deployment - max_change)
-        upper_bound = min(1, current_deployment + max_change)
+        # Max step per timestep
+        max_step = self.config.max_deployment_rate / sampling_rate
 
-        new_deployment = np.clip(new_deployment, lower_bound, upper_bound)
+        # Move current toward desired, but don’t overshoot
+        if desired_deployment > current_deployment:
+            new_deployment = min(current_deployment + max_step, desired_deployment)
+        else:
+            new_deployment = max(current_deployment - max_step, desired_deployment)
 
         return new_deployment
 
     def control(self, time: float, sampling_rate: int, state: np.ndarray,
                 state_history, observed_variables, air_brakes, sensors):
-        """
-        Main control function - consistently uses AGL coordinates.
+        """Main control function"""
 
-        Args:
-            state: RocketPy state vector where state[2] is altitude ASL
-        """
-
-        # Convert ASL to AGL for all calculations
+        # Convert ASL to AGL for all calculations - matches Arduino coordinate system
         true_altitude_asl = state[2]
         true_altitude_agl = max(0, true_altitude_asl - self.config.env_elevation)
         true_velocity = state[5]
 
-        # Read barometer (returns AGL altitude)
+        # Read barometer (returns AGL altitude) - matches Arduino getCalibratedAlt()
         barometer_altitude_agl, barometer_available = self._read_barometer(sensors)
 
         # Initialize defaults
@@ -138,10 +143,10 @@ class AirbrakeController:
         filtered_velocity = 0.0
         predicted_apogee_agl = 0.0
         deployment_level = 0.0
-        motor_burning = time < self.motor_burn_time
+        motor_burning = time < self.motor_burn_time  # Matches Arduino BURN_TIME check
         control_active = False
 
-        # Process barometer data if available
+        # Process barometer data if available - matches Arduino updateKalmanFilter() call
         if barometer_available:
             if not self.filter.initialized:
                 # Initialize filter with AGL altitude
@@ -153,17 +158,20 @@ class AirbrakeController:
                 filtered_altitude_agl, filtered_velocity = self.filter.update(
                     barometer_altitude_agl, time, self.motor_burn_time)
 
-            # Predict apogee in AGL coordinates
+            # Predict apogee in AGL coordinates - matches Arduino getApogeeEstimate()
             predicted_apogee_agl = self._predict_apogee(filtered_altitude_agl, filtered_velocity)
 
-            # Control logic. Only active after motor burnout and with positive velocity
+            # Control logic - matches Arduino switch/case flight states
+            # Only active after motor burnout and with positive velocity
             if not motor_burning and filtered_velocity > 0:
+                # Primary apogee control - matches Arduino runApogeeControl()
                 deployment_level = self._calculate_deployment(
                     predicted_apogee_agl, filtered_velocity, air_brakes.deployment_level, sampling_rate)
+
                 air_brakes.deployment_level = deployment_level
                 control_active = True
 
-        # Store data
+        # Store data for analysis
         self.data['time'].append(time)
         self.data['sim_altitude_agl'].append(true_altitude_agl)
         self.data['raw_altitude_agl'].append(barometer_altitude_agl if barometer_available else None)

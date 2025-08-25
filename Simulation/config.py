@@ -17,10 +17,11 @@ class ControllerConfig:
     # Sampling
     sampling_rate: int = 20
 
-    # Kalman filter parameters
-    sensor_noise_variance: float = 0.0302523
-    acceleration_decay_burn: float = 1.0
-    acceleration_decay_coast: float = 1.0
+    # Kalman filter params
+    alt_std: float = 0.173932
+    model_y_std: float = 0.01
+    model_v_std: float = 0.01
+    model_a_std: float = 0.01
 
     # Control parameters
     kp_base: float = 7000.0
@@ -28,12 +29,13 @@ class ControllerConfig:
     apogee_prediction_cd: float = 1.0
 
     # Calibration parameters
-    calibration_sample_size: int = 100
+    calibration_sample_size: int = 1
     calibration_sample_rate: float = 0.020
     calibration_point: float = 0.0
 
-    # Timing
+    # Timing parameters
     burn_time: float = 1.5
-
-    # Target duration for time control
     target_duration: float = 37.5
+
+    # Constants
+    sealevel_pressure_kpa: float = 101.325
