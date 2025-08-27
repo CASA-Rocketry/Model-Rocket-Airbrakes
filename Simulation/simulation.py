@@ -13,16 +13,20 @@ class SimulationRunner:
 
     def setup_environment(self):
         return Environment(
-            latitude=32.990254,
-            longitude=-106.974998,
+            latitude=self.config.latitude,
+            longitude=self.config.longitude,
             elevation=self.config.env_elevation,
         )
 
     def setup_rocket(self):
         rocket = Rocket(
             radius=self.config.rocket_radius,
-            mass=0.45,
-            inertia=(0.001, 0.001, 0.0001),
+            mass=self.config.dry_mass,
+            inertia=(
+                self.config.I_xx,
+                self.config.I_yy,
+                self.config.I_zz
+            ),
             power_off_drag="rocket_drag_curve.csv",
             power_on_drag="rocket_drag_curve.csv",
             center_of_mass_without_motor=0.35,
@@ -78,11 +82,11 @@ class SimulationRunner:
         return Flight(
             rocket=rocket,
             environment=environment,
-            rail_length=3,
+            rail_length=self.config.rail_length,
             inclination=85,
             heading=0,
             time_overshoot=False,
-            terminate_on_apogee=True
+            terminate_on_apogee=self.config.terminate_on_apogee
         )
 
     def export_to_csv(self, flight):
@@ -209,7 +213,7 @@ class SimulationRunner:
         print(f"{'=' * 50}")
 
     def run_full_simulation(self):
-        """Run complete simulation with analysis."""
+        """Run complete simulation with analysis"""
         try:
             print("Setting up simulation...")
             print(f"Target Apogee: {self.config.target_apogee:.1f}m AGL")

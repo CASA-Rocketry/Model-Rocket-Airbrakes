@@ -3,42 +3,42 @@ from config import ControllerConfig
 
 
 class KalmanAltitudeFilter:
-    """Kalman filter for altitude and velocity estimation - matches Arduino StateEstimation.ino"""
+    """Kalman filter for altitude and velocity estimation"""
 
     def __init__(self, config: ControllerConfig):
         self.config = config
         self.initialized = False
         self.previous_time = None
 
-        # State estimate vector [position, velocity, acceleration] - matches Arduino x
+        # State estimate vector [position, velocity, acceleration]
         self.x = np.array([[0.0], [0.0], [0.0]])
 
-        # Measurement vector - matches Arduino z
+        # Measurement vector
         self.z = np.array([[0.0]])
 
-        # 3x3 identity matrix - matches Arduino I
+        # 3x3 identity matrix
         self.I = np.eye(3)
 
-        # State transition matrix - matches Arduino phi
+        # State transition matrix
         self.phi = np.eye(3)
 
-        # State to measurement matrix - matches Arduino H
+        # State to measurement matrix
         self.H = np.array([[1.0, 0.0, 0.0]])
 
-        # Measurement covariance - matches Arduino R
+        # Measurement covariance
         self.R = np.array([[config.alt_std * config.alt_std]])
 
-        # Process covariance - matches Arduino Q
+        # Process covariance
         self.Q = np.array([
             [config.model_y_std * config.model_y_std, 0.0, 0.0],
             [0.0, config.model_v_std * config.model_v_std, 0.0],
             [0.0, 0.0, config.model_a_std * config.model_a_std]
         ])
 
-        # Error covariance - matches Arduino P
+        # Error covariance
         self.P = np.eye(3)
 
-        # Kalman gain - matches Arduino K
+        # Kalman gain
         self.K = np.zeros((3, 1))
 
     def initialize(self, initial_altitude_agl: float, sampling_rate: int):
@@ -48,32 +48,32 @@ class KalmanAltitudeFilter:
         self.initialized = True
 
     def updateKalmanFilter(self, measurement_agl: float, dt: float):
-        """Update Kalman filter - matches Arduino updateKalmanFilter() function"""
+        """Update Kalman filter"""
         if not self.initialized:
             raise RuntimeError("Filter not initialized")
 
-        # Add data - matches Arduino code
+        # Add data
         self.z[0, 0] = measurement_agl
 
-        # Update phi - matches Arduino phi calculation
+        # Update phi
         self.phi = np.array([
             [1.0, dt, 0.5 * dt * dt],
             [0.0, 1.0, dt],
             [0.0, 0.0, 1.0]
         ])
 
-        # Update Kalman Gain - matches Arduino K = P * ~H * Inverse((H * P * ~H + R))
+        # Update Kalman Gain
         HPH_R = self.H @ self.P @ self.H.T + self.R
         self.K = self.P @ self.H.T @ np.linalg.inv(HPH_R)
 
-        # Update Estimate - matches Arduino x = x + K * (z - H * x)
+        # Update Estimate
         innovation = self.z - self.H @ self.x
         self.x = self.x + self.K @ innovation
 
-        # Update Covariance - matches Arduino P = (I - K * H) * P
+        # Update Covariance
         self.P = (self.I - self.K @ self.H) @ self.P
 
-        # Project to next time stamp - matches Arduino projection
+        # Project to next time stamp
         self.x = self.phi @ self.x
         self.P = self.phi @ self.P @ self.phi.T + self.Q
 
@@ -101,7 +101,3 @@ class KalmanAltitudeFilter:
     def getVEstimate(self):
         """Get velocity estimate - matches Arduino getVEstimate()"""
         return float(self.x[1, 0])
-
-    def getAEstimate(self):
-        """Get acceleration estimate - matches Arduino getAEstimate()"""
-        return float(self.x[2, 0])
