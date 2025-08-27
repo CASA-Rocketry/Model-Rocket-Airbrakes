@@ -25,10 +25,10 @@ class ControllerConfig:
     sampling_rate: int = 20
 
     # Kalman filter params
-    alt_std = 0.173932
+    alt_std = 1
     model_y_std = 0.01
-    model_v_std = 0.01
-    model_a_std = 0.01
+    model_v_std = 2
+    model_a_std = 5
 
     # Control parameters
     kp_base = 7000.0

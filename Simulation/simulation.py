@@ -49,7 +49,7 @@ class SimulationRunner:
             lag=0, noise=(0, 8.3, 0.5))
 
         barometer = Barometer(
-            sampling_rate=50,
+            sampling_rate=self.config.sampling_rate,
             measurement_range=100000,
             resolution=0.2,  # 0.2 Pa resolution as per datasheet
             noise_density=0.0,

@@ -48,34 +48,37 @@ class KalmanAltitudeFilter:
         self.initialized = True
 
     def updateKalmanFilter(self, measurement_agl: float, dt: float):
-        """Update Kalman filter"""
-        if not self.initialized:
-            raise RuntimeError("Filter not initialized")
-
-        # Add data
-        self.z[0, 0] = measurement_agl
-
-        # Update phi
+        """Standard Kalman Filter - Predict then Update"""
+        print(f"dt: {dt:.4f}, measurement: {measurement_agl:.2f}")
+        print(f"Before - pos: {self.x[0, 0]:.2f}, vel: {self.x[1, 0]:.2f}")
+        # 1. PREDICT STEP
+        # Update phi matrix
         self.phi = np.array([
             [1.0, dt, 0.5 * dt * dt],
             [0.0, 1.0, dt],
             [0.0, 0.0, 1.0]
         ])
 
-        # Update Kalman Gain
+        # Predict state and covariance forward
+        self.x = self.phi @ self.x
+        self.P = self.phi @ self.P @ self.phi.T + self.Q
+
+        # 2. UPDATE STEP
+        self.z[0, 0] = measurement_agl
+
+        # Calculate Kalman gain
         HPH_R = self.H @ self.P @ self.H.T + self.R
         self.K = self.P @ self.H.T @ np.linalg.inv(HPH_R)
 
-        # Update Estimate
+        # Update state estimate
         innovation = self.z - self.H @ self.x
         self.x = self.x + self.K @ innovation
 
-        # Update Covariance
+        # Update covariance
         self.P = (self.I - self.K @ self.H) @ self.P
 
-        # Project to next time stamp
-        self.x = self.phi @ self.x
-        self.P = self.phi @ self.P @ self.phi.T + self.Q
+        print(f"After - pos: {self.x[0, 0]:.2f}, vel: {self.x[1, 0]:.2f}")
+        print("---")
 
     def update(self, measurement_agl: float, time: float, motor_burn_time: float):
         """Update filter and return estimates"""

@@ -100,8 +100,8 @@ class AirbrakeController:
         return predicted_apogee_agl
 
     def _calculate_deployment(self, predicted_apogee_agl: float, velocity: float,
-                              current_deployment: float, sampling_rate: int):
-        """Calculate airbrake deployment"""
+                              current_deployment: float, dt: float):  # ← Change: use dt instead of sampling_rate
+        """Calculate airbrake deployment - FIXED for time-based rate limiting"""
         error = predicted_apogee_agl - self.config.target_apogee
         if error <= 0:
             desired_deployment = 0.0
@@ -113,10 +113,11 @@ class AirbrakeController:
         # Clamp target deployment [0, 1]
         desired_deployment = float(np.clip(desired_deployment, 0.0, 1.0))
 
-        # Max step per timestep
-        max_step = self.config.max_deployment_rate / sampling_rate
+        # Max step per actual time elapsed (not per timestep!)
+        max_step = self.config.max_deployment_rate * dt  # ← KEY FIX: multiply by dt, not divide by sampling_rate
+        print(f"dt={dt:.4f}, max_deployment_rate={self.config.max_deployment_rate}, max_step={max_step:.4f}")
 
-        # Move current toward desired, but don’t overshoot
+        # Move current toward desired, but don't overshoot
         if desired_deployment > current_deployment:
             new_deployment = min(current_deployment + max_step, desired_deployment)
         else:
@@ -144,6 +145,16 @@ class AirbrakeController:
         motor_burning = time < self.motor_burn_time
         control_active = False
 
+        # Calculate dt for this timestep
+        if hasattr(self, 'previous_control_time'):
+            dt = time - self.previous_control_time
+            if dt <= 1e-6:  # Skip duplicate calls
+                return time, air_brakes.deployment_level, 0.0  # Return current values unchanged
+        else:
+            dt = 1.0 / sampling_rate
+
+        self.previous_control_time = time
+
         # Process barometer data if available
         if barometer_available:
             if not self.filter.initialized:
@@ -163,7 +174,7 @@ class AirbrakeController:
             # Only active after motor burnout and with positive velocity
             if not motor_burning and filtered_velocity > 0:
                 deployment_level = self._calculate_deployment(
-                    predicted_apogee_agl, filtered_velocity, air_brakes.deployment_level, sampling_rate)
+                    predicted_apogee_agl, filtered_velocity, air_brakes.deployment_level, dt)  # ← Pass dt
 
                 air_brakes.deployment_level = deployment_level
                 control_active = True
