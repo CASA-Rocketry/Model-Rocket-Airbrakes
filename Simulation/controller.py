@@ -5,7 +5,7 @@ from config import ControllerConfig
 
 
 class AirbrakeController:
-    """Airbrake controller - matches Arduino control logic"""
+    """Airbrake controller"""
 
     def __init__(self, config: ControllerConfig, motor_burn_time: float):
         self.config = config
@@ -17,6 +17,11 @@ class AirbrakeController:
         self.ground_pressure_calibrated = False
         self.calibration_readings = []  # Store multiple readings for better calibration
         self.calibration_samples = config.calibration_sample_size
+
+        # Rate limiter state
+        self.rate_limiter_initialized = False
+        self.previous_deployment = 0.0
+        self.previous_time = None
 
         # Data storage
         self.data = {
@@ -99,9 +104,9 @@ class AirbrakeController:
 
         return predicted_apogee_agl
 
-    def _calculate_deployment(self, predicted_apogee_agl: float, velocity: float,
-                              current_deployment: float, dt: float):  # ← Change: use dt instead of sampling_rate
-        """Calculate airbrake deployment - FIXED for time-based rate limiting"""
+    def _calculate_deployment(self, predicted_apogee_agl: float, velocity: float, current_time: float):
+        """Calculate airbrake deployment"""
+        # Calculate desired deployment based on error
         error = predicted_apogee_agl - self.config.target_apogee
         if error <= 0:
             desired_deployment = 0.0
@@ -110,18 +115,41 @@ class AirbrakeController:
             kp = self.config.kp_base / velocity_factor
             desired_deployment = kp * error
 
-        # Clamp target deployment [0, 1]
+        # Clamp desired deployment [0, 1]
         desired_deployment = float(np.clip(desired_deployment, 0.0, 1.0))
 
-        # Max step per actual time elapsed (not per timestep!)
-        max_step = self.config.max_deployment_rate * dt  # ← KEY FIX: multiply by dt, not divide by sampling_rate
-        print(f"dt={dt:.4f}, max_deployment_rate={self.config.max_deployment_rate}, max_step={max_step:.4f}")
+        # Rate limiting
+        if not self.rate_limiter_initialized:
+            self.previous_deployment = 0.0
+            self.previous_time = current_time
+            self.rate_limiter_initialized = True
+            return 0.0
 
-        # Move current toward desired, but don't overshoot
-        if desired_deployment > current_deployment:
-            new_deployment = min(current_deployment + max_step, desired_deployment)
+        # Calculate actual time interval
+        dt = current_time - self.previous_time
+        if dt <= 1e-6:  # Handle zero or negative time intervals
+            return self.previous_deployment
+
+        # Calculate maximum allowed change this timestep
+        max_change = self.config.max_deployment_rate * dt
+
+        # Calculate actual change needed
+        change_needed = desired_deployment - self.previous_deployment
+
+        # Apply rate limiting
+        if change_needed > max_change:
+            new_deployment = self.previous_deployment + max_change
+        elif change_needed < -max_change:
+            new_deployment = self.previous_deployment - max_change
         else:
-            new_deployment = max(current_deployment - max_step, desired_deployment)
+            new_deployment = desired_deployment
+
+        # Final clamp to [0, 1]
+        new_deployment = float(np.clip(new_deployment, 0.0, 1.0))
+
+        # Update state for next iteration
+        self.previous_deployment = new_deployment
+        self.previous_time = current_time
 
         return new_deployment
 
@@ -145,16 +173,6 @@ class AirbrakeController:
         motor_burning = time < self.motor_burn_time
         control_active = False
 
-        # Calculate dt for this timestep
-        if hasattr(self, 'previous_control_time'):
-            dt = time - self.previous_control_time
-            if dt <= 1e-6:  # Skip duplicate calls
-                return time, air_brakes.deployment_level, 0.0  # Return current values unchanged
-        else:
-            dt = 1.0 / sampling_rate
-
-        self.previous_control_time = time
-
         # Process barometer data if available
         if barometer_available:
             if not self.filter.initialized:
@@ -174,7 +192,7 @@ class AirbrakeController:
             # Only active after motor burnout and with positive velocity
             if not motor_burning and filtered_velocity > 0:
                 deployment_level = self._calculate_deployment(
-                    predicted_apogee_agl, filtered_velocity, air_brakes.deployment_level, dt)  # ← Pass dt
+                    predicted_apogee_agl, filtered_velocity, time)
 
                 air_brakes.deployment_level = deployment_level
                 control_active = True

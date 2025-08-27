@@ -7,8 +7,8 @@ class ControllerConfig:
     rocket_radius = 0.028
     airbrake_area = 0.00246300864
     air_density = 1.2
-    burnout_mass = 0.54
-    dry_mass = 0.54
+    burnout_mass = 0.5
+    dry_mass = 0.5
     I_xx = 0.031
     I_yy = 0.031
     I_zz = 0.0001
@@ -28,11 +28,11 @@ class ControllerConfig:
     alt_std = 1
     model_y_std = 0.01
     model_v_std = 2
-    model_a_std = 5
+    model_a_std = 50
 
     # Control parameters
     kp_base = 7000.0
-    max_deployment_rate = 0.5
+    max_deployment_rate = 2   # Percent deployed / time
     apogee_prediction_cd = 1.0
 
     # Calibration parameters
