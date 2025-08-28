@@ -1,10 +1,10 @@
 from rocketpy import Environment, Rocket, Flight, Barometer
 from rocketpy.motors import GenericMotor
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from controller import AirbrakeController
 from config import ControllerConfig
+from plotting import FlightPlotter, create_flight_plots  # Import the new plotting module
 
 class SimulationRunner:
     def __init__(self, config: ControllerConfig):
@@ -141,62 +141,6 @@ class SimulationRunner:
             import traceback
             traceback.print_exc()
 
-    def plot_results(self):
-        """Create plots"""
-        if not self.controller.data['time']:
-            return
-
-        times = np.array(self.controller.data['time'])
-
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
-
-        # Altitude tracking
-        ax1.plot(times, self.controller.data['sim_altitude_agl'], 'blue', label='True AGL', linewidth=2)
-        ax1.plot(times, self.controller.data['filtered_altitude_agl'], 'red', label='Filtered AGL', linewidth=2)
-
-        # Add raw barometer data
-        raw_times = []
-        raw_altitudes = []
-        for i, raw_alt in enumerate(self.controller.data['raw_altitude_agl']):
-            if raw_alt is not None:
-                raw_times.append(times[i])
-                raw_altitudes.append(raw_alt)
-
-        if raw_times:
-            ax1.scatter(raw_times, raw_altitudes, c='orange', s=10, alpha=0.6, label='Raw Barometer', zorder=3)
-
-        ax1.set_ylabel("Altitude AGL (m)")
-        ax1.set_title("Altitude Tracking (Above Ground Level)")
-        ax1.legend()
-        ax1.grid(True, alpha=0.3)
-
-        # Velocity tracking
-        ax2.plot(times, self.controller.data['sim_velocity'], 'darkgreen', label='True', linewidth=2)
-        ax2.plot(times, self.controller.data['filtered_velocity'], 'orange', label='Filtered', linewidth=2)
-        ax2.set_ylabel("Velocity (m/s)")
-        ax2.set_title("Velocity Tracking")
-        ax2.legend()
-        ax2.grid(True, alpha=0.3)
-
-        # Deployment
-        ax3.plot(times, self.controller.data['deployment'], 'purple', linewidth=2)
-        ax3.set_ylabel("Deployment Level")
-        ax3.set_xlabel("Time (s)")
-        ax3.set_title("Air Brake Deployment")
-        ax3.grid(True, alpha=0.3)
-
-        # Apogee prediction
-        ax4.plot(times, self.controller.data['predicted_apogee_agl'], 'darkred', linewidth=2, label='Predicted AGL')
-        ax4.axhline(y=self.config.target_apogee, color='forestgreen', linestyle='--', linewidth=2, label='Target AGL')
-        ax4.set_ylabel("Apogee AGL (m)")
-        ax4.set_xlabel("Time (s)")
-        ax4.set_title("Apogee Prediction (Above Ground Level)")
-        ax4.legend()
-        ax4.grid(True, alpha=0.3)
-
-        plt.tight_layout()
-        plt.show()
-
     def print_summary(self, flight):
         """Print flight summary."""
         flight_apogee_agl = flight.apogee - self.config.env_elevation
@@ -228,9 +172,6 @@ class SimulationRunner:
 
             print("Exporting data...")
             self.export_to_csv(flight)
-
-            print("Creating plots...")
-            self.plot_results()
 
             self.print_summary(flight)
 

@@ -22,7 +22,7 @@ class ControllerConfig:
     terminate_on_apogee = True
 
     # Sampling
-    sampling_rate: int = 10
+    sampling_rate: int = 20
 
     # Kalman filter params
     alt_std = 0.173932
