@@ -10,7 +10,7 @@ def main():
     config = ControllerConfig()
     runner = SimulationRunner(config)
 
-    # Run simulation without plotting
+    # Run simulation
     flight = runner.run_full_simulation()
 
     # Create plots using FlightPlotter

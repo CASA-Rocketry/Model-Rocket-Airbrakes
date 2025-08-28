@@ -12,15 +12,15 @@ class FlightPlotter:
         self.config = config
         self.flight = flight
 
-    def plot_controller_analysis(self):
-        """Create the 2x2 controller analysis plots"""
-        if not self.controller.data['time']:
+    def plot_tracking_and_error_analysis(self):
+        """Window 1: Combined tracking and error analysis in 3x2 layout"""
+        if not self.controller or not self.controller.data['time']:
             print("No controller data available for plotting")
             return
 
         times = np.array(self.controller.data['time'])
 
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
+        fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(18, 10))
 
         # Altitude tracking
         ax1.plot(times, self.controller.data['sim_altitude_agl'], 'blue', label='True AGL', linewidth=2)
@@ -38,7 +38,8 @@ class FlightPlotter:
             ax1.scatter(raw_times, raw_altitudes, c='orange', s=10, alpha=0.6, label='Raw Barometer', zorder=3)
 
         ax1.set_ylabel("Altitude AGL (m)")
-        ax1.set_title("Altitude Tracking (Above Ground Level)")
+        ax1.set_xlabel("Time (s)")
+        ax1.set_title("Altitude Tracking")
         ax1.legend()
         ax1.grid(True, alpha=0.3)
 
@@ -46,261 +47,184 @@ class FlightPlotter:
         ax2.plot(times, self.controller.data['sim_velocity'], 'darkgreen', label='True', linewidth=2)
         ax2.plot(times, self.controller.data['filtered_velocity'], 'orange', label='Filtered', linewidth=2)
         ax2.set_ylabel("Velocity (m/s)")
+        ax2.set_xlabel("Time (s)")
         ax2.set_title("Velocity Tracking")
         ax2.legend()
         ax2.grid(True, alpha=0.3)
 
-        # Deployment
-        ax3.plot(times, self.controller.data['deployment'], 'purple', linewidth=2)
-        ax3.set_ylabel("Deployment Level")
+        # Acceleration tracking
+        if self.flight:
+            try:
+                flight_acceleration = self.flight.acceleration(times)
+                ax3.plot(times, flight_acceleration, 'blue', label='True Acceleration', linewidth=2)
+            except Exception as e:
+                print(f"Could not get flight acceleration: {e}")
+
+        # Add filtered acceleration
+        filtered_accel = np.array(self.controller.data['filtered_acceleration'])
+        filtered_accel_abs = np.abs(filtered_accel)
+        ax3.plot(times, filtered_accel_abs, 'red', label='Filtered Acceleration', linewidth=2)
+
+        ax3.set_ylabel("Acceleration (m/s²)")
         ax3.set_xlabel("Time (s)")
-        ax3.set_title("Air Brake Deployment")
+        ax3.set_title("Acceleration Tracking")
+        ax3.legend()
         ax3.grid(True, alpha=0.3)
-
-        # Apogee prediction
-        ax4.plot(times, self.controller.data['predicted_apogee_agl'], 'darkred', linewidth=2, label='Predicted AGL')
-        ax4.axhline(y=self.config.target_apogee, color='forestgreen', linestyle='--', linewidth=2, label='Target AGL')
-        ax4.set_ylabel("Apogee AGL (m)")
-        ax4.set_xlabel("Time (s)")
-        ax4.set_title("Apogee Prediction (Above Ground Level)")
-        ax4.legend()
-        ax4.grid(True, alpha=0.3)
-
-        plt.tight_layout()
-        plt.show()
-
-    def plot_flight_trajectory(self):
-        """Plot 3D flight trajectory"""
-        if not self.flight:
-            print("No flight object available for trajectory plotting")
-            return
-
-        try:
-            # Basic trajectory plot (use trajectory_3d instead of trajectory)
-            self.flight.plots.trajectory_3d()
-        except Exception as e:
-            print(f"Could not create trajectory plot: {e}")
-            print("Available plot methods:",
-                  [method for method in dir(self.flight.plots) if not method.startswith('_')])
-
-    def plot_comprehensive_flight_analysis(self):
-        """Create comprehensive flight analysis plots using RocketPy"""
-        if not self.flight:
-            print("No flight object available for comprehensive analysis")
-            return
-
-        # Uncomment desired plots below:
-
-        # Basic flight info and summary
-        # self.flight.info()
-        # self.flight.prints.initial_conditions()
-        # self.flight.prints.numerical_integration_settings()
-        # self.flight.prints.surface_wind_conditions()
-        # self.flight.prints.launch_rail_conditions()
-        # self.flight.prints.out_of_rail_conditions()
-        # self.flight.prints.burn_out_conditions()
-        # self.flight.prints.apogee_conditions()
-        # self.flight.prints.maximum_values()
-        # self.flight.prints.impact_conditions()
-
-        # Trajectory plots
-        # self.flight.plots.trajectory_3d()  # 3D trajectory
-        # self.flight.plots.linear_kinematics()  # Position, velocity, acceleration vs time
-
-        # Additional plots (uncomment as needed)
-        # self.flight.plots.angular_kinematics()  # Angular position, velocity, acceleration
-        # self.flight.plots.attitude_angle()  # Attitude angles vs time
-        # self.flight.plots.aerodynamic_forces()  # Drag, normal forces
-        # self.flight.plots.energy()  # Kinetic, potential, total energy
-        # self.flight.plots.atmospheric_model()  # Temperature, pressure, density vs altitude
-        # self.flight.plots.flight_path_angle()  # Flight path angle vs time
-        # self.flight.plots.velocity_components()  # Velocity components
-        # self.flight.plots.static_margin()  # Static margin vs time
-        # self.flight.plots.stability_and_control()  # Stability derivatives
-
-        # Ground track and landing analysis
-        # self.flight.plots.xy()  # Ground track (x vs y)
-
-        print(
-            "To enable comprehensive flight analysis, uncomment desired plots in plot_comprehensive_flight_analysis() method")
-
-    def plot_sensor_comparison(self):
-        """Plot comparison between true flight data and sensor readings"""
-        if not self.flight or not self.controller.data['time']:
-            print("Need both flight object and controller data for sensor comparison")
-            return
-
-        times = np.array(self.controller.data['time'])
-
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
-
-        # Altitude comparison
-        try:
-            flight_alt_asl = self.flight.z(times)
-            flight_alt_agl = flight_alt_asl - self.config.env_elevation
-
-            ax1.plot(times, flight_alt_agl, 'blue', label='True Flight AGL', linewidth=2)
-            ax1.plot(times, self.controller.data['sim_altitude_agl'], 'green', label='Sim Truth AGL', linewidth=2)
-            ax1.plot(times, self.controller.data['filtered_altitude_agl'], 'red', label='Filtered AGL', linewidth=2)
-
-            # Raw barometer data
-            raw_times = [times[i] for i, raw_alt in enumerate(self.controller.data['raw_altitude_agl']) if
-                         raw_alt is not None]
-            raw_altitudes = [raw_alt for raw_alt in self.controller.data['raw_altitude_agl'] if raw_alt is not None]
-            if raw_times:
-                ax1.scatter(raw_times, raw_altitudes, c='orange', s=10, alpha=0.6, label='Raw Barometer')
-
-            ax1.set_ylabel("Altitude AGL (m)")
-            ax1.set_title("Altitude: Flight vs Simulation vs Sensors")
-            ax1.legend()
-            ax1.grid(True, alpha=0.3)
-        except Exception as e:
-            print(f"Could not plot altitude comparison: {e}")
-
-        # Velocity comparison
-        try:
-            flight_velocity = self.flight.speed(times)
-
-            ax2.plot(times, flight_velocity, 'blue', label='True Flight Speed', linewidth=2)
-            ax2.plot(times, self.controller.data['sim_velocity'], 'green', label='Sim Truth Velocity', linewidth=2)
-            ax2.plot(times, self.controller.data['filtered_velocity'], 'red', label='Filtered Velocity', linewidth=2)
-            ax2.set_ylabel("Velocity (m/s)")
-            ax2.set_title("Velocity: Flight vs Simulation vs Filter")
-            ax2.legend()
-            ax2.grid(True, alpha=0.3)
-        except Exception as e:
-            print(f"Could not plot velocity comparison: {e}")
-
-        # Mach number and dynamic pressure
-        try:
-            flight_mach = self.flight.mach_number(times)
-            flight_dyn_pressure = self.flight.dynamic_pressure(times)
-
-            ax3.plot(times, flight_mach, 'purple', linewidth=2)
-            ax3.set_ylabel("Mach Number")
-            ax3.set_title("Flight Mach Number")
-            ax3.grid(True, alpha=0.3)
-
-            ax4.plot(times, flight_dyn_pressure, 'brown', linewidth=2)
-            ax4.set_ylabel("Dynamic Pressure (Pa)")
-            ax4.set_xlabel("Time (s)")
-            ax4.set_title("Dynamic Pressure")
-            ax4.grid(True, alpha=0.3)
-        except Exception as e:
-            print(f"Could not plot Mach/pressure: {e}")
-
-        plt.tight_layout()
-        plt.show()
-
-    def plot_control_analysis(self):
-        """Plot simplified control system analysis"""
-        if not self.controller.data['time']:
-            print("No controller data available")
-            return
-
-        times = np.array(self.controller.data['time'])
-
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-
-        # Motor burning and control active phases
-        motor_burning = np.array(self.controller.data['motor_burning'])
-        control_active = np.array(self.controller.data['control_active'])
-
-        ax1.fill_between(times, 0, 1, where=motor_burning, alpha=0.3, color='red', label='Motor Burning')
-        ax1.fill_between(times, 0, 1, where=control_active, alpha=0.3, color='green', label='Control Active')
-        ax1.set_ylabel("Phase")
-        ax1.set_xlabel("Time (s)")
-        ax1.set_title("Flight Phases")
-        ax1.set_ylim(0, 1.1)
-        ax1.legend()
-        ax1.grid(True, alpha=0.3)
-
-        # Simple deployment over time
-        ax2.plot(times, self.controller.data['deployment'], 'purple', linewidth=2)
-        ax2.set_ylabel("Deployment Level")
-        ax2.set_xlabel("Time (s)")
-        ax2.set_title("Air Brake Deployment Over Time")
-        ax2.grid(True, alpha=0.3)
-
-        plt.tight_layout()
-        plt.show()
-
-    def plot_filter_performance(self):
-        """Plot simplified Kalman filter performance analysis"""
-        if not self.controller.data['time']:
-            print("No controller data available")
-            return
-
-        times = np.array(self.controller.data['time'])
-
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
 
         # Altitude errors
         sim_alt = np.array(self.controller.data['sim_altitude_agl'])
         filtered_alt = np.array(self.controller.data['filtered_altitude_agl'])
         alt_errors = np.abs(sim_alt - filtered_alt)
 
-        ax1.plot(times, alt_errors, 'red', linewidth=2)
-        ax1.set_ylabel("Altitude Error (m)")
-        ax1.set_xlabel("Time (s)")
-        ax1.set_title("Kalman Filter Altitude Error")
-        ax1.grid(True, alpha=0.3)
+        ax4.plot(times, alt_errors, 'red', linewidth=2)
+        ax4.set_ylabel("Altitude Error (m)")
+        ax4.set_xlabel("Time (s)")
+        ax4.set_title("Altitude Error")
+        ax4.grid(True, alpha=0.3)
 
         # Velocity errors
         sim_vel = np.array(self.controller.data['sim_velocity'])
         filtered_vel = np.array(self.controller.data['filtered_velocity'])
         vel_errors = np.abs(sim_vel - filtered_vel)
 
-        ax2.plot(times, vel_errors, 'blue', linewidth=2)
-        ax2.set_ylabel("Velocity Error (m/s)")
-        ax2.set_xlabel("Time (s)")
-        ax2.set_title("Kalman Filter Velocity Error")
-        ax2.grid(True, alpha=0.3)
+        ax5.plot(times, vel_errors, 'blue', linewidth=2)
+        ax5.set_ylabel("Velocity Error (m/s)")
+        ax5.set_xlabel("Time (s)")
+        ax5.set_title("Velocity Error")
+        ax5.grid(True, alpha=0.3)
+
+        # Acceleration errors
+        if self.flight and 'filtered_acceleration' in self.controller.data:
+            try:
+                true_accel = self.flight.acceleration(times)
+                filtered_accel = np.array(self.controller.data['filtered_acceleration'])
+                accel_errors = np.abs(true_accel - np.abs(filtered_accel))
+
+                ax6.plot(times, accel_errors, 'purple', linewidth=2)
+                ax6.set_ylabel("Acceleration Error (m/s²)")
+                ax6.set_xlabel("Time (s)")
+                ax6.set_title("Acceleration Error")
+                ax6.grid(True, alpha=0.3)
+            except Exception as e:
+                print(f"Could not plot acceleration error: {e}")
+                ax6.text(0.5, 0.5, 'Acceleration Error\nData Not Available',
+                         ha='center', va='center', transform=ax6.transAxes, fontsize=12)
+                ax6.set_title("Acceleration Error")
+        else:
+            ax6.text(0.5, 0.5, 'Acceleration Error\nData Not Available',
+                     ha='center', va='center', transform=ax6.transAxes, fontsize=12)
+            ax6.set_title("Acceleration Error")
 
         plt.tight_layout()
         plt.show()
 
+    def plot_control_analysis(self):
+        """Window 2: Deployment level, apogee prediction (from control active), and airbrake drag force"""
+        if not self.controller or not self.controller.data['time']:
+            print("No controller data available for control analysis")
+            return
+
+        times = np.array(self.controller.data['time'])
+        control_active = np.array(self.controller.data['control_active'])
+
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
+
+        # Deployment level
+        deployment = np.array(self.controller.data['deployment'])
+        ax1.plot(times, deployment, 'purple', linewidth=2)
+        ax1.set_ylabel("Deployment Level")
+        ax1.set_xlabel("Time (s)")
+        ax1.set_title("Airbrake Deployment Level")
+        ax1.set_ylim(0, 1.1)
+        ax1.grid(True, alpha=0.3)
+
+        # Apogee prediction (only from when control is active)
+        control_times = times[control_active]
+        control_apogee = np.array(self.controller.data['predicted_apogee_agl'])[control_active]
+
+        if len(control_times) > 0:
+            ax2.plot(control_times, control_apogee, 'darkred', linewidth=2, label='Predicted AGL')
+            ax2.axhline(y=self.config.target_apogee, color='forestgreen', linestyle='--', linewidth=2,
+                        label='Target AGL')
+        else:
+            ax2.text(0.5, 0.5, 'No Control Active\nPeriod Found',
+                     ha='center', va='center', transform=ax2.transAxes, fontsize=12)
+
+        ax2.set_ylabel("Apogee AGL (m)")
+        ax2.set_xlabel("Time (s)")
+        ax2.set_title("Apogee Prediction (Control Active Only)")
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+
+        # Airbrake drag force
+        if self.flight:
+            try:
+                # Calculate airbrake drag force
+                air_density = self.config.air_density
+                airbrake_area = self.config.airbrake_area
+
+                # Get velocity from flight data
+                velocities = self.flight.speed(times)
+
+                # Estimate Cd from deployment level
+                cd_values = deployment * self.config.airbrake_drag
+
+                drag_forces = 0.5 * air_density * velocities ** 2 * cd_values * airbrake_area
+
+                ax3.plot(times, drag_forces, 'brown', linewidth=2)
+                ax3.set_ylabel("Airbrake Drag Force (N)")
+                ax3.set_xlabel("Time (s)")
+                ax3.set_title("Airbrake Drag Force")
+                ax3.grid(True, alpha=0.3)
+            except Exception as e:
+                print(f"Could not calculate airbrake drag force: {e}")
+                ax3.text(0.5, 0.5, 'Drag Force\nCalculation Failed',
+                         ha='center', va='center', transform=ax3.transAxes, fontsize=12)
+                ax3.set_title("Airbrake Drag Force")
+        else:
+            ax3.text(0.5, 0.5, 'Flight Data\nNot Available',
+                     ha='center', va='center', transform=ax3.transAxes, fontsize=12)
+            ax3.set_title("Airbrake Drag Force")
+
+        plt.tight_layout()
+        plt.show()
+
+    def plot_flight_trajectory(self):
+        """Window 3: 3D flight trajectory"""
+        if not self.flight:
+            print("No flight object available for trajectory plotting")
+            return
+
+        try:
+            # 3D trajectory plot
+            self.flight.plots.trajectory_3d()
+        except Exception as e:
+            print(f"Could not create trajectory plot: {e}")
+            print("Available plot methods:",
+                  [method for method in dir(self.flight.plots) if not method.startswith('_')])
+
     def create_all_plots(self):
-        """Create all available plots with error handling"""
+        """Create all plots in the specified order"""
         try:
-            print("Creating controller analysis plots...")
-            self.plot_controller_analysis()
+            print("Creating tracking and error analysis plots (Window 1)...")
+            self.plot_tracking_and_error_analysis()
         except Exception as e:
-            print(f"Error creating controller analysis plots: {e}")
+            print(f"Error creating tracking and error analysis plots: {e}")
 
         try:
-            print("Creating sensor comparison plots...")
-            self.plot_sensor_comparison()
-        except Exception as e:
-            print(f"Error creating sensor comparison plots: {e}")
-
-        try:
-            print("Creating control analysis plots...")
+            print("Creating control analysis plots (Window 2)...")
             self.plot_control_analysis()
         except Exception as e:
             print(f"Error creating control analysis plots: {e}")
 
-        try:
-            print("Creating filter performance plots...")
-            self.plot_filter_performance()
-        except Exception as e:
-            print(f"Error creating filter performance plots: {e}")
-
         if self.flight:
             try:
-                print("Creating flight trajectory plot...")
+                print("Creating 3D flight trajectory (Window 3)...")
                 self.plot_flight_trajectory()
             except Exception as e:
                 print(f"Error creating flight trajectory plot: {e}")
-
-            # Uncomment to enable comprehensive flight analysis
-            # try:
-            #     print("Creating comprehensive flight analysis...")
-            #     self.plot_comprehensive_flight_analysis()
-            # except Exception as e:
-            #     print(f"Error creating comprehensive flight analysis: {e}")
         else:
-            print("No flight object available - skipping flight-specific plots")
+            print("No flight object available - skipping 3D trajectory plot")
 
 
 def create_flight_plots(controller, config: ControllerConfig, flight: Flight = None):

@@ -63,7 +63,7 @@ class KalmanAltitudeFilter:
         self.x = self.phi @ self.x
         self.P = self.phi @ self.P @ self.phi.T + self.Q
 
-        # 2. UPDATE STEP
+        # 2. update step
         self.z[0, 0] = measurement_agl
 
         # Calculate Kalman gain
@@ -98,9 +98,13 @@ class KalmanAltitudeFilter:
         return self.getYEstimate(), self.getVEstimate()
 
     def getYEstimate(self):
-        """Get position estimate - matches Arduino getYEstimate()"""
+        """Get position estimate"""
         return float(self.x[0, 0])
 
     def getVEstimate(self):
-        """Get velocity estimate - matches Arduino getVEstimate()"""
+        """Get velocity estimate"""
         return float(self.x[1, 0])
+
+    def getAEstimate(self):
+        """Get acceleration estimate"""
+        return float(self.x[2, 0])

@@ -27,7 +27,7 @@ class AirbrakeController:
         self.data = {
             'time': [], 'sim_altitude_agl': [], 'raw_altitude_agl': [], 'filtered_altitude_agl': [],
             'sim_velocity': [], 'filtered_velocity': [], 'deployment': [], 'predicted_apogee_agl': [],
-            'motor_burning': [], 'control_active': []
+            'motor_burning': [], 'control_active': [], 'filtered_acceleration': []
         }
 
     def _calibrate_barometer(self, pressure_pa: float):
@@ -65,11 +65,6 @@ class AirbrakeController:
                     if self.ground_pressure and self.ground_pressure > 0:
                         # Use the barometric formula relative to ground pressure
                         altitude_agl = 44330 * (1 - (pressure_pa / self.ground_pressure) ** (1 / 5.255))
-
-                        # Sanity check for reasonable altitude values
-                        if altitude_agl < -10 or altitude_agl > 1000:
-                            print(f"Warning: Suspicious barometer reading: {altitude_agl:.1f}m AGL")
-
                         return altitude_agl, True
                     else:
                         return None, False
@@ -168,6 +163,7 @@ class AirbrakeController:
         # Initialize defaults
         filtered_altitude_agl = barometer_altitude_agl if barometer_available else true_altitude_agl
         filtered_velocity = 0.0
+        filtered_acceleration = 0.0
         predicted_apogee_agl = 0.0
         deployment_level = 0.0
         motor_burning = time < self.motor_burn_time
@@ -180,10 +176,13 @@ class AirbrakeController:
                 self.filter.initialize(barometer_altitude_agl, sampling_rate)
                 filtered_altitude_agl = barometer_altitude_agl
                 filtered_velocity = 0.0
+                filtered_acceleration = 0.0
             else:
                 # Update filter with AGL altitude, get AGL results
                 filtered_altitude_agl, filtered_velocity = self.filter.update(
                     barometer_altitude_agl, time, self.motor_burn_time)
+
+                filtered_acceleration = self.filter.getAEstimate()
 
             # Predict apogee in AGL coordinates
             predicted_apogee_agl = self._predict_apogee(filtered_altitude_agl, filtered_velocity)
@@ -208,5 +207,6 @@ class AirbrakeController:
         self.data['predicted_apogee_agl'].append(predicted_apogee_agl)
         self.data['motor_burning'].append(motor_burning)
         self.data['control_active'].append(control_active)
+        self.data['filtered_acceleration'].append(filtered_acceleration)
 
         return time, deployment_level, predicted_apogee_agl

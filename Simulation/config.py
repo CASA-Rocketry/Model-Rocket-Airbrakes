@@ -13,9 +13,23 @@ class ControllerConfig:
     I_yy = 0.031
     I_zz = 0.0001
     rail_length = 3
+    com_no_motor = 0.3
+
+    # Fins
+    n_fins = 4
+    root_chord = 0.055
+    tip_chord = 0.03
+    span = 0.032
+    fin_position = 0.66
+    cant_angle = 0
+
+    # Chute
+    chute_cd = 0.8
+    deployment_alt = 210
+
 
     # Target and environment
-    target_apogee = 229
+    target_apogee = 228
     env_elevation = 200
     latitude = 30
     longitude = 30
@@ -25,15 +39,16 @@ class ControllerConfig:
     sampling_rate: int = 20
 
     # Kalman filter params
-    alt_std = 0.173932
+    alt_std = 0.0173932
     model_y_std = 0.01
     model_v_std = 10
-    model_a_std = 40
+    model_a_std = 20
 
     # Control parameters
     kp_base = 20000.0
     max_deployment_rate = 2   # Percent deployed / time
     apogee_prediction_cd = 0.8   # Should match the rocket drag curve
+    airbrake_drag = 0.5    # Max Cd from airbrake. Needs to match airbrake drag curve
 
     # Calibration parameters
     calibration_sample_size = 1

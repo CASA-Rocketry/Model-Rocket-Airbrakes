@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from controller import AirbrakeController
 from config import ControllerConfig
-from plotting import FlightPlotter, create_flight_plots  # Import the new plotting module
 
 class SimulationRunner:
     def __init__(self, config: ControllerConfig):
@@ -29,7 +28,7 @@ class SimulationRunner:
             ),
             power_off_drag="rocket_drag_curve.csv",
             power_on_drag="rocket_drag_curve.csv",
-            center_of_mass_without_motor=0.35,
+            center_of_mass_without_motor=self.config.com_no_motor,
             coordinate_system_orientation="nose_to_tail",
         )
 
@@ -42,10 +41,10 @@ class SimulationRunner:
 
         rocket.add_nose(length=0.13, kind="von karman", position=0)
         rocket.add_trapezoidal_fins(
-            n=4, root_chord=0.075, tip_chord=0.050, span=0.03,
-            position=0.695, cant_angle=0.5)
+            n=self.config.n_fins, root_chord=self.config.root_chord, tip_chord=self.config.tip_chord, span=self.config.span,
+            position=self.config.fin_position, cant_angle=self.config.cant_angle)
         rocket.add_parachute(
-            name="Chute", cd_s=0.8, trigger=210, sampling_rate=10,
+            name="Chute", cd_s=self.config.chute_cd, trigger=self.config.deployment_alt, sampling_rate=10,
             lag=0, noise=(0, 8.3, 0.5))
 
         barometer = Barometer(
@@ -53,7 +52,7 @@ class SimulationRunner:
             measurement_range=100000,
             resolution=0.2,  # 0.2 Pa resolution as per datasheet
             noise_density=0.0,
-            noise_variance=(0.75) ** 2,  # Variance ≈ (0.75 Pa RMS)² ≈ 0.56 Pa²
+            noise_variance=(0.75) ** 2,
             random_walk_density=0.0,
             constant_bias=10.0,
             operating_temperature=25,
@@ -76,6 +75,8 @@ class SimulationRunner:
             name="Air Brakes",
         )
 
+        rocket.draw()
+
         return rocket, motor
 
     def run_simulation(self, rocket, environment):
@@ -90,7 +91,7 @@ class SimulationRunner:
         )
 
     def export_to_csv(self, flight):
-        """Export flight data to CSV."""
+        """Export flight data to CSV"""
         if not self.controller.data['time']:
             print("No controller data available for export.")
             return
@@ -113,22 +114,27 @@ class SimulationRunner:
                 'Apogee_Prediction_Cd': self.config.apogee_prediction_cd,
             })
 
+            # Add filtered acceleration if available
+            if 'filtered_acceleration' in self.controller.data:
+                df['Filtered_Acceleration_ms2'] = self.controller.data['filtered_acceleration']
+
             # Calculate errors
             df['Altitude_Error_m'] = np.abs(df['Simulated_Altitude_AGL_m'] - df['Filtered_Altitude_AGL_m'])
             df['Velocity_Error_ms'] = np.abs(df['Simulated_Velocity_ms'] - df['Filtered_Velocity_ms'])
             df['Apogee_Error_m'] = df['Predicted_Apogee_AGL_m'] - self.config.target_apogee
 
             # Add flight data if available
-            try:
-                times = np.array(self.controller.data['time'])
-                flight_alt_asl = flight.z(times)
-                df['Flight_Altitude_AGL_m'] = flight_alt_asl - self.config.env_elevation
-                df['Flight_Velocity_Total_ms'] = flight.speed(times)
-                df['Flight_Acceleration_ms2'] = flight.acceleration(times)
-                df['Flight_Mach_Number'] = flight.mach_number(times)
-                df['Flight_Dynamic_Pressure_Pa'] = flight.dynamic_pressure(times)
-            except Exception as e:
-                print(f"Warning: Could not add flight data: {e}")
+            if flight is not None:
+                try:
+                    times = np.array(self.controller.data['time'])
+                    flight_alt_asl = flight.z(times)
+                    df['Flight_Altitude_AGL_m'] = flight_alt_asl - self.config.env_elevation
+                    df['Flight_Velocity_Total_ms'] = flight.speed(times)
+                    df['Flight_Acceleration_ms2'] = flight.acceleration(times)
+                    df['Flight_Mach_Number'] = flight.mach_number(times)
+                    df['Flight_Dynamic_Pressure_Pa'] = flight.dynamic_pressure(times)
+                except Exception as e:
+                    print(f"Warning: Could not add flight data: {e}")
 
             # Export to CSV
             filename = 'rocket_flight_data.csv'
@@ -142,19 +148,31 @@ class SimulationRunner:
             traceback.print_exc()
 
     def print_summary(self, flight):
-        """Print flight summary."""
-        flight_apogee_agl = flight.apogee - self.config.env_elevation
-        error = flight_apogee_agl - self.config.target_apogee
-        error_pct = 100 * error / self.config.target_apogee
+        """Print flight summary"""
+        if flight is None:
+            print(f"\n{'=' * 50}")
+            print(f"FLIGHT SUMMARY")
+            print(f"{'=' * 50}")
+            print("ERROR: Flight simulation failed")
+            print(f"Data Points: {len(self.controller.data['time']) if self.controller and self.controller.data['time'] else 0}")
+            print(f"{'=' * 50}")
+            return
 
-        print(f"\n{'=' * 50}")
-        print(f"FLIGHT SUMMARY")
-        print(f"{'=' * 50}")
-        print(f"Apogee AGL: {flight_apogee_agl:.1f}m (Target: {self.config.target_apogee:.1f}m)")
-        print(f"Error: {error:.1f}m ({error_pct:.1f}%)")
-        print(f"Flight Time: {max(self.controller.data['time']):.2f}s")
-        print(f"Data Points: {len(self.controller.data['time'])}")
-        print(f"{'=' * 50}")
+        try:
+            flight_apogee_agl = flight.apogee - self.config.env_elevation
+            error = flight_apogee_agl - self.config.target_apogee
+            error_pct = 100 * error / self.config.target_apogee
+
+            print(f"\n{'=' * 50}")
+            print(f"FLIGHT SUMMARY")
+            print(f"{'=' * 50}")
+            print(f"Apogee AGL: {flight_apogee_agl:.1f}m (Target: {self.config.target_apogee:.1f}m)")
+            print(f"Error: {error:.1f}m ({error_pct:.1f}%)")
+            print(f"Flight Time: {max(self.controller.data['time']) if self.controller and self.controller.data['time'] else 'N/A'}s")
+            print(f"Data Points: {len(self.controller.data['time']) if self.controller and self.controller.data['time'] else 0}")
+            print(f"{'=' * 50}")
+        except Exception as e:
+            print(f"Error printing summary: {e}")
 
     def run_full_simulation(self):
         """Run complete simulation with analysis"""
@@ -175,7 +193,10 @@ class SimulationRunner:
 
             self.print_summary(flight)
 
+            return flight
+
         except Exception as e:
             print(f"Simulation error: {e}")
             import traceback
             traceback.print_exc()
+            return None  # Return None if simulation fails
