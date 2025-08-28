@@ -7,8 +7,8 @@ class ControllerConfig:
     rocket_radius = 0.028
     airbrake_area = 0.00246300864
     air_density = 1.2
-    burnout_mass = 0.5
-    dry_mass = 0.5
+    burnout_mass = 0.561
+    dry_mass = 0.534
     I_xx = 0.031
     I_yy = 0.031
     I_zz = 0.0001
@@ -22,21 +22,21 @@ class ControllerConfig:
     terminate_on_apogee = True
 
     # Sampling
-    sampling_rate: int = 20
+    sampling_rate: int = 10
 
     # Kalman filter params
-    alt_std = 1
+    alt_std = 0.173932
     model_y_std = 0.01
-    model_v_std = 2
-    model_a_std = 50
+    model_v_std = 10
+    model_a_std = 40
 
     # Control parameters
-    kp_base = 7000.0
+    kp_base = 20000.0
     max_deployment_rate = 2   # Percent deployed / time
-    apogee_prediction_cd = 1.0
+    apogee_prediction_cd = 0.8   # Should match the rocket drag curve
 
     # Calibration parameters
-    calibration_sample_size: int = 1
+    calibration_sample_size = 1
     calibration_sample_rate = 0.020
     calibration_point = 0.0
 

@@ -111,7 +111,7 @@ class AirbrakeController:
         if error <= 0:
             desired_deployment = 0.0
         else:
-            velocity_factor = velocity ** 2 + 15.0
+            velocity_factor = velocity ** 3 + 15.0
             kp = self.config.kp_base / velocity_factor
             desired_deployment = kp * error
 
