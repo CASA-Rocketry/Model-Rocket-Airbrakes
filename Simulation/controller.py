@@ -13,10 +13,7 @@ class AirbrakeController:
         self.filter = KalmanAltitudeFilter(config)
 
         self.sea_level_pressure = config.sealevel_pressure_kpa * 1000
-        self.ground_pressure = None  # Will be calibrated from first reading
-        self.ground_pressure_calibrated = False
-        self.calibration_readings = []  # Store multiple readings for better calibration
-        self.calibration_samples = config.calibration_sample_size
+        self.ground_pressure = None  # Will be set from first reading
 
         # Rate limiter state
         self.rate_limiter_initialized = False
@@ -30,23 +27,6 @@ class AirbrakeController:
             'motor_burning': [], 'control_active': [], 'filtered_acceleration': []
         }
 
-    def _calibrate_barometer(self, pressure_pa: float):
-        """Calibrate barometer using multiple readings"""
-        if not self.ground_pressure_calibrated:
-            self.calibration_readings.append(pressure_pa)
-
-            if len(self.calibration_readings) >= self.calibration_samples:
-                # Use average of calibration readings
-                self.ground_pressure = np.mean(self.calibration_readings)
-                self.ground_pressure_calibrated = True
-                std_dev = np.std(self.calibration_readings)
-                print(f"Barometer calibrated: Ground pressure = {self.ground_pressure:.1f} ± {std_dev:.1f} Pa")
-                return True
-            else:
-                print(f"Calibrating barometer... {len(self.calibration_readings)}/{self.calibration_samples}")
-                return False
-        return True
-
     def _read_barometer(self, sensors):
         """Read barometer and return AGL altitude"""
         for sensor in sensors:
@@ -57,9 +37,10 @@ class AirbrakeController:
                     if pressure_pa <= 0:
                         return None, False
 
-                    # Calibrate barometer with multiple readings
-                    if not self._calibrate_barometer(pressure_pa):
-                        return None, False
+                    # Set ground pressure from first reading
+                    if self.ground_pressure is None:
+                        self.ground_pressure = pressure_pa
+                        print(f"Ground pressure set: {self.ground_pressure:.1f} Pa")
 
                     # Convert pressure to altitude AGL
                     if self.ground_pressure and self.ground_pressure > 0:
@@ -74,19 +55,33 @@ class AirbrakeController:
                     return None, False
         return None, False
 
-    def _predict_apogee(self, altitude_agl: float, velocity: float):
-        """Apogee predictor for control algorithm"""
+    def _predict_apogee(self, altitude_agl: float, velocity: float, current_deployment: float = 0.0):
+        """Apogee predictor for control algorithm with combined rocket and airbrake drag"""
         if velocity <= 0:
             return altitude_agl
 
-        # Use configurable drag coefficient
-        k = 0.5 * self.config.air_density * self.config.apogee_prediction_cd * self.config.airbrake_area
+        # Calculate combined drag coefficient
+        # Rocket base drag coefficient
+        rocket_cd = self.config.apogee_prediction_cd
+
+        # Airbrake contribution based on current deployment level
+        airbrake_cd = current_deployment * self.config.airbrake_drag
+
+        # Combined drag coefficient (rocket + airbrake)
+        combined_cd = rocket_cd + airbrake_cd
+
+        # Use rocket's reference area for drag calculation
+        # (airbrake area is already accounted for in the airbrake_drag coefficient)
+        rocket_reference_area = 3.14159 * (self.config.rocket_radius ** 2)
+
+        # Calculate drag parameter k with combined drag
+        k = 0.5 * self.config.air_density * combined_cd * rocket_reference_area
         if k <= 0:
-            return 0
+            return altitude_agl
 
         log_arg = (k * velocity ** 2) / (self.config.burnout_mass * 9.81) + 1
         if log_arg <= 0:
-            return 0
+            return altitude_agl
 
         delta_altitude = (self.config.burnout_mass / (2 * k)) * math.log(log_arg)
         predicted_apogee_agl = altitude_agl + delta_altitude
@@ -95,25 +90,26 @@ class AirbrakeController:
         if predicted_apogee_agl < altitude_agl:
             print(
                 f"Warning: Predicted apogee ({predicted_apogee_agl:.1f}m) below current altitude ({altitude_agl:.1f}m)")
+            print(f"  Combined Cd: {combined_cd:.3f} (rocket: {rocket_cd:.3f}, airbrake: {airbrake_cd:.3f})")
             return altitude_agl
 
         return predicted_apogee_agl
 
     def _calculate_deployment(self, predicted_apogee_agl: float, velocity: float, current_time: float):
-        """Calculate airbrake deployment"""
+        """Calculate airbrake deployment (simplified version)"""
         # Calculate desired deployment based on error
         error = predicted_apogee_agl - self.config.target_apogee
         if error <= 0:
             desired_deployment = 0.0
         else:
             velocity_factor = velocity ** 3 + 15.0
-            kp = self.config.kp_base / velocity_factor
+            kp = self.config.kp_base #/ velocity_factor
             desired_deployment = kp * error
 
         # Clamp desired deployment [0, 1]
         desired_deployment = float(np.clip(desired_deployment, 0.0, 1.0))
 
-        # Rate limiting
+        # Rate limiting (existing code)
         if not self.rate_limiter_initialized:
             self.previous_deployment = 0.0
             self.previous_time = current_time
@@ -161,13 +157,16 @@ class AirbrakeController:
         barometer_altitude_agl, barometer_available = self._read_barometer(sensors)
 
         # Initialize defaults
-        filtered_altitude_agl = barometer_altitude_agl if barometer_available else true_altitude_agl
+        filtered_altitude_agl = barometer_altitude_agl
         filtered_velocity = 0.0
         filtered_acceleration = 0.0
         predicted_apogee_agl = 0.0
         deployment_level = 0.0
         motor_burning = time < self.motor_burn_time
         control_active = False
+
+        # Get current deployment level from airbrakes
+        current_deployment = getattr(air_brakes, 'deployment_level', 0.0)
 
         # Process barometer data if available
         if barometer_available:
@@ -184,8 +183,9 @@ class AirbrakeController:
 
                 filtered_acceleration = self.filter.getAEstimate()
 
-            # Predict apogee in AGL coordinates
-            predicted_apogee_agl = self._predict_apogee(filtered_altitude_agl, filtered_velocity)
+            # Predict apogee in AGL coordinates with current deployment
+            predicted_apogee_agl = self._predict_apogee(
+                filtered_altitude_agl, filtered_velocity, current_deployment)
 
             # Control logic
             # Only active after motor burnout and with positive velocity
@@ -199,7 +199,7 @@ class AirbrakeController:
         # Store data for analysis
         self.data['time'].append(time)
         self.data['sim_altitude_agl'].append(true_altitude_agl)
-        self.data['raw_altitude_agl'].append(barometer_altitude_agl if barometer_available else None)
+        self.data['raw_altitude_agl'].append(barometer_altitude_agl)
         self.data['filtered_altitude_agl'].append(filtered_altitude_agl)
         self.data['sim_velocity'].append(true_velocity)
         self.data['filtered_velocity'].append(filtered_velocity)

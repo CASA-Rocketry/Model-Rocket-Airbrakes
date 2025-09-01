@@ -49,8 +49,6 @@ class KalmanAltitudeFilter:
 
     def updateKalmanFilter(self, measurement_agl: float, dt: float):
         """Standard Kalman Filter - Predict then Update"""
-        print(f"dt: {dt:.4f}, measurement: {measurement_agl:.2f}")
-        print(f"Before - pos: {self.x[0, 0]:.2f}, vel: {self.x[1, 0]:.2f}")
         # 1. PREDICT STEP
         # Update phi matrix
         self.phi = np.array([
@@ -76,9 +74,6 @@ class KalmanAltitudeFilter:
 
         # Update covariance
         self.P = (self.I - self.K @ self.H) @ self.P
-
-        print(f"After - pos: {self.x[0, 0]:.2f}, vel: {self.x[1, 0]:.2f}")
-        print("---")
 
     def update(self, measurement_agl: float, time: float, motor_burn_time: float):
         """Update filter and return estimates"""

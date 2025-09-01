@@ -54,13 +54,13 @@ class SimulationRunner:
             noise_density=0.0,
             noise_variance=(0.75) ** 2,
             random_walk_density=0.0,
-            constant_bias=10.0,
+            constant_bias=0.0,
             operating_temperature=25,
-            temperature_bias=0.0,  # unspecified in datasheet
-            temperature_scale_factor=0.0,  # unspecified
+            temperature_bias=0.0,
+            temperature_scale_factor=0.0,
             name="Barometer"
         )
-        rocket.add_sensor(barometer, position=(0.265, 0, 0))
+        rocket.add_sensor(barometer, position=(0, 0, 0.35))
 
         self.controller = AirbrakeController(self.config, motor.burn_out_time)
 
