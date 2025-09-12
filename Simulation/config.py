@@ -46,7 +46,7 @@ class ControllerConfig:
 
     # Control parameters
     kp_base = 20000.0
-    max_deployment_rate = 3   # deployment / time
+    max_deployment_rate = 1   # deployment / time
     apogee_prediction_cd = 0.8   # Should match the rocket drag curve
     airbrake_drag = 0.5    # Max Cd from airbrake. Needs to match airbrake drag curve
 

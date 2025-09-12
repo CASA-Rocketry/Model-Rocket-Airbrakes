@@ -3,9 +3,12 @@ import numpy as np
 from kalman_filter import KalmanAltitudeFilter
 from config import ControllerConfig
 
+import math
+import numpy as np
+
 
 class AirbrakeController:
-    """Airbrake controller"""
+    """Airbrake controller with enhanced temperature-aware barometer"""
 
     def __init__(self, config: ControllerConfig, motor_burn_time: float):
         self.config = config
@@ -13,7 +16,12 @@ class AirbrakeController:
         self.filter = KalmanAltitudeFilter(config)
 
         self.sea_level_pressure = config.sealevel_pressure_kpa * 1000
-        self.ground_pressure = None  # Will be set from first reading
+        self.ground_pressure = None
+        self.ground_temperature = None  # Ground reference temperature
+
+        # Temperature model parameters
+        self.standard_lapse_rate = 0.0065  # K/m
+        self.standard_temp_sea_level = 288.15  # K (15°C)
 
         # Rate limiter state
         self.rate_limiter_initialized = False
@@ -24,36 +32,107 @@ class AirbrakeController:
         self.data = {
             'time': [], 'sim_altitude_agl': [], 'raw_altitude_agl': [], 'filtered_altitude_agl': [],
             'sim_velocity': [], 'filtered_velocity': [], 'deployment': [], 'predicted_apogee_agl': [],
-            'motor_burning': [], 'control_active': [], 'filtered_acceleration': []
+            'motor_burning': [], 'control_active': [], 'filtered_acceleration': [], 'temperature': []
         }
 
-    def _read_barometer(self, sensors):
-        """Read barometer and return AGL altitude"""
+    def _get_atmospheric_temperature(self, altitude_asl, flight_time=None, environment=None):
+        """
+        Get atmospheric temperature using multiple approaches
+
+        Args:
+            altitude_asl: Altitude above sea level (m)
+            flight_time: Current flight time (optional, for environment lookup)
+            environment: RocketPy environment object (optional)
+
+        Returns:
+            Temperature in Kelvin
+        """
+
+        # Approach 1: Try to get from RocketPy environment if available
+        if environment is not None and flight_time is not None:
+            try:
+                # RocketPy environment has temperature vs altitude data
+                temp_celsius = environment.temperature(altitude_asl)
+                return temp_celsius + 273.15  # Convert to Kelvin
+            except:
+                pass
+
+        # Approach 2: Use International Standard Atmosphere model
+        if self.ground_temperature is None:
+            # Initialize ground temperature from environment or use standard
+            if environment is not None:
+                try:
+                    ground_temp_celsius = environment.temperature(self.config.env_elevation)
+                    self.ground_temperature = ground_temp_celsius + 273.15
+                except:
+                    self.ground_temperature = self.standard_temp_sea_level - (
+                                self.config.env_elevation * self.standard_lapse_rate)
+            else:
+                # Use standard atmosphere
+                self.ground_temperature = self.standard_temp_sea_level - (
+                            self.config.env_elevation * self.standard_lapse_rate)
+
+        # Calculate temperature at altitude using lapse rate
+        height_above_ground = altitude_asl - self.config.env_elevation
+        temperature = self.ground_temperature - (self.standard_lapse_rate * height_above_ground)
+
+        # Ensure temperature doesn't go below reasonable limits
+        return max(temperature, 200.0)  # Don't go below -73°C
+
+    def _read_barometer(self, sensors, flight_time=None, environment=None):
+        """Read barometer sensor and return altitude above ground level (AGL)."""
+        # Physical constants
+        R = 8.314462618  # J/(mol*K)
+        M = 0.0289644  # kg/mol (air)
+        g = 9.80665  # m/s^2
+
         for sensor in sensors:
-            if (hasattr(sensor, 'measured_data') and sensor.name == "Barometer" and
-                    hasattr(sensor, 'measurement') and sensor.measurement is not None):
+            if (
+                    hasattr(sensor, "measured_data")
+                    and sensor.name == "Barometer"
+                    and hasattr(sensor, "measurement")
+                    and sensor.measurement is not None
+            ):
                 try:
                     pressure_pa = float(sensor.measurement)
                     if pressure_pa <= 0:
-                        return None, False
+                        return None, False, None
 
-                    # Set ground pressure from first reading
+                    # Initialize ground reference
                     if self.ground_pressure is None:
                         self.ground_pressure = pressure_pa
-                        print(f"Ground pressure set: {self.ground_pressure:.1f} Pa")
+                        # Get initial temperature
+                        self.ground_temperature = self._get_atmospheric_temperature(
+                            self.config.env_elevation, flight_time, environment)
 
-                    # Convert pressure to altitude AGL
                     if self.ground_pressure and self.ground_pressure > 0:
-                        # Use the barometric formula relative to ground pressure
-                        altitude_agl = 44330 * (1 - (pressure_pa / self.ground_pressure) ** (1 / 5.255))
-                        return altitude_agl, True
+                        # First, get rough altitude estimate using ground temperature
+                        T_ground = self.ground_temperature
+                        exponent = (R * self.standard_lapse_rate) / (g * M)
+                        ratio = pressure_pa / self.ground_pressure
+                        rough_altitude = self.config.env_elevation + (T_ground / self.standard_lapse_rate) * (
+                                    1.0 - ratio ** exponent)
+
+                        # Get temperature at estimated altitude
+                        T_altitude = self._get_atmospheric_temperature(rough_altitude, flight_time, environment)
+
+                        # Use average temperature for more accurate calculation
+                        T_avg = (T_ground + T_altitude) / 2.0
+
+                        # Recalculate altitude with average temperature
+                        altitude_asl = self.config.env_elevation + (T_avg / self.standard_lapse_rate) * (
+                                    1.0 - ratio ** exponent)
+                        altitude_agl = altitude_asl - self.config.env_elevation
+
+                        return altitude_agl, True, T_altitude
                     else:
-                        return None, False
+                        return None, False, None
 
                 except (ValueError, TypeError, AttributeError) as e:
                     print(f"Barometer read error: {e}")
-                    return None, False
-        return None, False
+                    return None, False, None
+
+        return None, False, None
 
     def _predict_apogee(self, altitude_agl: float, velocity: float, current_deployment: float = 0.0):
         """Apogee predictor for control algorithm with combined rocket and airbrake drag"""
@@ -145,16 +224,17 @@ class AirbrakeController:
         return new_deployment
 
     def control(self, time: float, sampling_rate: int, state: np.ndarray,
-                state_history, observed_variables, air_brakes, sensors):
-        """Main control function"""
+                state_history, observed_variables, air_brakes, sensors, environment=None):
+        """Main control function with environment parameter for temperature"""
 
         # Convert ASL to AGL for all calculations
         true_altitude_asl = state[2]
         true_altitude_agl = max(0, true_altitude_asl - self.config.env_elevation)
         true_velocity = state[5]
 
-        # Read barometer (returns AGL altitude)
-        barometer_altitude_agl, barometer_available = self._read_barometer(sensors)
+        # Read barometer (returns AGL altitude and temperature)
+        barometer_altitude_agl, barometer_available, current_temp = self._read_barometer(
+            sensors, time, environment)
 
         # Initialize defaults
         filtered_altitude_agl = barometer_altitude_agl
@@ -196,7 +276,7 @@ class AirbrakeController:
                 air_brakes.deployment_level = deployment_level
                 control_active = True
 
-        # Store data for analysis
+        # Store data for analysis (including temperature)
         self.data['time'].append(time)
         self.data['sim_altitude_agl'].append(true_altitude_agl)
         self.data['raw_altitude_agl'].append(barometer_altitude_agl)
@@ -208,5 +288,6 @@ class AirbrakeController:
         self.data['motor_burning'].append(motor_burning)
         self.data['control_active'].append(control_active)
         self.data['filtered_acceleration'].append(filtered_acceleration)
+        self.data['temperature'].append(current_temp - 273.15 if current_temp else None)  # Store in Celsius
 
         return time, deployment_level, predicted_apogee_agl

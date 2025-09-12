@@ -191,6 +191,7 @@ class FlightPlotter:
 
     def plot_flight_trajectory(self):
         """Window 3: 3D flight trajectory"""
+
         if not self.flight:
             print("No flight object available for trajectory plotting")
             return

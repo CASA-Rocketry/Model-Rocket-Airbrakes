@@ -9,13 +9,7 @@ class SimulationRunner:
     def __init__(self, config: ControllerConfig):
         self.config = config
         self.controller = None
-
-    def setup_environment(self):
-        return Environment(
-            latitude=self.config.latitude,
-            longitude=self.config.longitude,
-            elevation=self.config.env_elevation,
-        )
+        self.environment = None  # Store environment reference
 
     def setup_rocket(self):
         rocket = Rocket(
@@ -50,12 +44,12 @@ class SimulationRunner:
         barometer = Barometer(
             sampling_rate=self.config.sampling_rate,
             measurement_range=100000,
-            resolution=0.2,  # 0.2 Pa resolution as per datasheet
+            resolution=0.2,
             noise_density=0.0,
             noise_variance=(0.75) ** 2,
             random_walk_density=0.0,
             constant_bias=0.0,
-            operating_temperature=25,
+            operating_temperature=20,
             temperature_bias=0.0,
             temperature_scale_factor=0.0,
             name="Barometer"
@@ -64,9 +58,17 @@ class SimulationRunner:
 
         self.controller = AirbrakeController(self.config, motor.burn_out_time)
 
+        # Create a wrapper function that passes the environment to the controller
+        def controller_wrapper(time, sampling_rate, state, state_history,
+                             observed_variables, air_brakes, sensors):
+            return self.controller.control(
+                time, sampling_rate, state, state_history,
+                observed_variables, air_brakes, sensors, self.environment
+            )
+
         rocket.add_air_brakes(
             drag_coefficient_curve="airbrake_drag_curve.csv",
-            controller_function=self.controller.control,
+            controller_function=controller_wrapper,  # Use wrapper instead of direct controller
             sampling_rate=self.config.sampling_rate,
             reference_area=self.config.airbrake_area,
             clamp=True,
@@ -78,6 +80,40 @@ class SimulationRunner:
         rocket.draw()
 
         return rocket, motor
+
+    def run_full_simulation(self):
+        """Run complete simulation with analysis"""
+        try:
+            print("Setting up simulation...")
+            print(f"Target Apogee: {self.config.target_apogee:.1f}m AGL")
+            print(f"Environment Elevation: {self.config.env_elevation}m ASL")
+            print(f"Apogee Prediction Cd: {self.config.apogee_prediction_cd}")
+
+            self.environment = self.setup_environment()  # Store environment reference
+            rocket, motor = self.setup_rocket()
+
+            print("Running simulation...")
+            flight = self.run_simulation(rocket, self.environment)
+
+            print("Exporting data...")
+            self.export_to_csv(flight)
+
+            self.print_summary(flight)
+
+            return flight
+
+        except Exception as e:
+            print(f"Simulation error: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    def setup_environment(self):
+        return Environment(
+            latitude=self.config.latitude,
+            longitude=self.config.longitude,
+            elevation=self.config.env_elevation,
+        )
 
     def run_simulation(self, rocket, environment):
         return Flight(
@@ -91,7 +127,7 @@ class SimulationRunner:
         )
 
     def export_to_csv(self, flight):
-        """Export flight data to CSV"""
+        """Export flight data to CSV with temperature data"""
         if not self.controller.data['time']:
             print("No controller data available for export.")
             return
@@ -112,6 +148,7 @@ class SimulationRunner:
                 'Target_Apogee_AGL_m': self.config.target_apogee,
                 'Environment_Elevation_m': self.config.env_elevation,
                 'Apogee_Prediction_Cd': self.config.apogee_prediction_cd,
+                'Temperature_C': self.controller.data['temperature'],  # Add temperature data
             })
 
             # Add filtered acceleration if available
@@ -133,6 +170,17 @@ class SimulationRunner:
                     df['Flight_Acceleration_ms2'] = flight.acceleration(times)
                     df['Flight_Mach_Number'] = flight.mach_number(times)
                     df['Flight_Dynamic_Pressure_Pa'] = flight.dynamic_pressure(times)
+
+                    # Add environment temperature data for comparison
+                    env_temps = []
+                    for alt_asl in flight_alt_asl:
+                        try:
+                            temp_c = self.environment.temperature(alt_asl)
+                            env_temps.append(temp_c)
+                        except:
+                            env_temps.append(None)
+                    df['Environment_Temperature_C'] = env_temps
+
                 except Exception as e:
                     print(f"Warning: Could not add flight data: {e}")
 
@@ -142,11 +190,15 @@ class SimulationRunner:
             print(f"\nData exported to {filename}")
             print(f"Rows: {len(df)}, Columns: {len(df.columns)}")
 
+            # Print temperature statistics
+            temps = [t for t in self.controller.data['temperature'] if t is not None]
+            if temps:
+                print(f"Temperature range: {min(temps):.1f}°C to {max(temps):.1f}°C")
+
         except Exception as e:
             print(f"Error exporting CSV: {e}")
             import traceback
             traceback.print_exc()
-
     def print_summary(self, flight):
         """Print flight summary"""
         if flight is None:
