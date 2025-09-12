@@ -35,6 +35,12 @@ class KalmanAltitudeFilter:
             [0.0, 0.0, config.model_a_std * config.model_a_std]
         ])
 
+        self.Q_2 = np.array([
+            [config.model_y_std_2 * config.model_y_std_2, 0.0, 0.0],
+            [0.0, config.model_v_std_2 * config.model_v_std_2, 0.0],
+            [0.0, 0.0, config.model_a_std_2 * config.model_a_std_2]
+        ])
+
         # Error covariance
         self.P = np.eye(3)
 
@@ -47,7 +53,7 @@ class KalmanAltitudeFilter:
         self.P = np.eye(3)  # Reset to identity matrix
         self.initialized = True
 
-    def updateKalmanFilter(self, measurement_agl: float, dt: float):
+    def updateKalmanFilter(self, measurement_agl: float, dt: float, time: float):
         """Standard Kalman Filter - Predict then Update"""
         # 1. PREDICT STEP
         # Update phi matrix
@@ -56,6 +62,10 @@ class KalmanAltitudeFilter:
             [0.0, 1.0, dt],
             [0.0, 0.0, 1.0]
         ])
+
+        if time > 1.5:
+            self.Q = self.Q_2
+
 
         # Predict state and covariance forward
         self.x = self.phi @ self.x
@@ -86,7 +96,7 @@ class KalmanAltitudeFilter:
         dt = max(dt, 1e-6)  # Prevent zero dt
 
         # Update the Kalman filter
-        self.updateKalmanFilter(measurement_agl, dt)
+        self.updateKalmanFilter(measurement_agl, dt, time)
 
         self.previous_time = time
 

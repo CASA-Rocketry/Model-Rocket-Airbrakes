@@ -8,7 +8,7 @@ import numpy as np
 
 
 class AirbrakeController:
-    """Airbrake controller with enhanced temperature-aware barometer"""
+    """Airbrake controller with enhanced temperature-aware barometer and PD control"""
 
     def __init__(self, config: ControllerConfig, motor_burn_time: float):
         self.config = config
@@ -28,36 +28,25 @@ class AirbrakeController:
         self.previous_deployment = 0.0
         self.previous_time = None
 
+        # PD Controller state
+        self.previous_error = 0.0
+        self.error_history = []
+        self.max_error_history = 5  # Keep last 5 errors for smoothing
+
+        # Deadband and hysteresis parameters
+        self.deadband = getattr(config, 'control_deadband', 5.0)  # ±5m deadband around target
+        self.hysteresis_factor = getattr(config, 'hysteresis_factor', 0.8)  # Reduces oscillation
+
         # Data storage
         self.data = {
             'time': [], 'sim_altitude_agl': [], 'raw_altitude_agl': [], 'filtered_altitude_agl': [],
             'sim_velocity': [], 'filtered_velocity': [], 'deployment': [], 'predicted_apogee_agl': [],
-            'motor_burning': [], 'control_active': [], 'filtered_acceleration': [], 'temperature': []
+            'motor_burning': [], 'control_active': [], 'filtered_acceleration': [], 'temperature': [],
+            'error': [], 'derivative_term': []
         }
 
     def _get_atmospheric_temperature(self, altitude_asl, flight_time=None, environment=None):
-        """
-        Get atmospheric temperature using multiple approaches
 
-        Args:
-            altitude_asl: Altitude above sea level (m)
-            flight_time: Current flight time (optional, for environment lookup)
-            environment: RocketPy environment object (optional)
-
-        Returns:
-            Temperature in Kelvin
-        """
-
-        # Approach 1: Try to get from RocketPy environment if available
-        if environment is not None and flight_time is not None:
-            try:
-                # RocketPy environment has temperature vs altitude data
-                temp_celsius = environment.temperature(altitude_asl)
-                return temp_celsius + 273.15  # Convert to Kelvin
-            except:
-                pass
-
-        # Approach 2: Use International Standard Atmosphere model
         if self.ground_temperature is None:
             # Initialize ground temperature from environment or use standard
             if environment is not None:
@@ -66,11 +55,11 @@ class AirbrakeController:
                     self.ground_temperature = ground_temp_celsius + 273.15
                 except:
                     self.ground_temperature = self.standard_temp_sea_level - (
-                                self.config.env_elevation * self.standard_lapse_rate)
+                            self.config.env_elevation * self.standard_lapse_rate)
             else:
                 # Use standard atmosphere
                 self.ground_temperature = self.standard_temp_sea_level - (
-                            self.config.env_elevation * self.standard_lapse_rate)
+                        self.config.env_elevation * self.standard_lapse_rate)
 
         # Calculate temperature at altitude using lapse rate
         height_above_ground = altitude_asl - self.config.env_elevation
@@ -111,7 +100,7 @@ class AirbrakeController:
                         exponent = (R * self.standard_lapse_rate) / (g * M)
                         ratio = pressure_pa / self.ground_pressure
                         rough_altitude = self.config.env_elevation + (T_ground / self.standard_lapse_rate) * (
-                                    1.0 - ratio ** exponent)
+                                1.0 - ratio ** exponent)
 
                         # Get temperature at estimated altitude
                         T_altitude = self._get_atmospheric_temperature(rough_altitude, flight_time, environment)
@@ -121,7 +110,7 @@ class AirbrakeController:
 
                         # Recalculate altitude with average temperature
                         altitude_asl = self.config.env_elevation + (T_avg / self.standard_lapse_rate) * (
-                                    1.0 - ratio ** exponent)
+                                1.0 - ratio ** exponent)
                         altitude_agl = altitude_asl - self.config.env_elevation
 
                         return altitude_agl, True, T_altitude
@@ -174,24 +163,89 @@ class AirbrakeController:
 
         return predicted_apogee_agl
 
-    def _calculate_deployment(self, predicted_apogee_agl: float, velocity: float, current_time: float):
-        """Calculate airbrake deployment (simplified version)"""
-        # Calculate desired deployment based on error
-        error = predicted_apogee_agl - self.config.target_apogee
-        if error <= 0:
-            desired_deployment = 0.0
+    def _smooth_error_derivative(self, current_error, dt):
+        """Calculate smoothed error derivative to reduce noise"""
+        self.error_history.append(current_error)
+
+        # Keep only recent errors
+        if len(self.error_history) > self.max_error_history:
+            self.error_history.pop(0)
+
+        if len(self.error_history) < 2:
+            return 0.0
+
+        # Use least squares fit for smoother derivative
+        if len(self.error_history) >= 3:
+            n = len(self.error_history)
+            x = np.arange(n) * dt
+            y = np.array(self.error_history)
+
+            # Simple linear regression for derivative
+            x_mean = np.mean(x)
+            y_mean = np.mean(y)
+            derivative = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
+            return derivative
         else:
-            velocity_factor = velocity ** 3 + 15.0
-            kp = self.config.kp_base #/ velocity_factor
-            desired_deployment = kp * error
+            # Simple difference for first few points
+            return (self.error_history[-1] - self.error_history[-2]) / dt
+
+    def _calculate_deployment(self, predicted_apogee_agl: float, velocity: float, current_time: float):
+        """Calculate airbrake deployment with PD control and deadband"""
+
+        # Calculate error
+        error = predicted_apogee_agl - self.config.target_apogee
+
+        # Apply deadband - no control action if within acceptable range
+        if abs(error) < self.deadband:
+            effective_error = 0.0
+        else:
+            # Reduce effective error to create hysteresis
+            if error > 0:
+                effective_error = (error - self.deadband) * self.hysteresis_factor
+            else:
+                effective_error = (error + self.deadband) * self.hysteresis_factor
+
+        # If no error, gradually reduce deployment
+        if effective_error == 0:
+            if hasattr(self, 'previous_deployment'):
+                desired_deployment = self.previous_deployment
+            else:
+                desired_deployment = 0.0
+        else:
+            # PD Control calculation
+            # Proportional term
+            kp = getattr(self.config, 'kp_base', 0.01)
+            proportional_term = kp * effective_error
+
+            # Derivative term
+            if not self.rate_limiter_initialized:
+                derivative_term = 0.0
+                self.previous_error = effective_error
+            else:
+                dt = current_time - self.previous_time
+                if dt > 1e-6:
+                    # Use smoothed derivative
+                    error_derivative = self._smooth_error_derivative(effective_error, dt)
+                    kd = getattr(self.config, 'kd_base', 0.002)  # Add this to your config
+                    derivative_term = kd * error_derivative
+                else:
+                    derivative_term = 0.0
+
+            # Combined PD output
+            desired_deployment = proportional_term + derivative_term
+
+            # Store for logging
+            if hasattr(self, 'data'):
+                self.data.setdefault('derivative_term', []).append(derivative_term)
 
         # Clamp desired deployment [0, 1]
         desired_deployment = float(np.clip(desired_deployment, 0.0, 1.0))
 
-        # Rate limiting (existing code)
+        # Rate limiting (existing code with modifications)
         if not self.rate_limiter_initialized:
             self.previous_deployment = 0.0
             self.previous_time = current_time
+            self.previous_error = effective_error
             self.rate_limiter_initialized = True
             return 0.0
 
@@ -200,8 +254,14 @@ class AirbrakeController:
         if dt <= 1e-6:  # Handle zero or negative time intervals
             return self.previous_deployment
 
-        # Calculate maximum allowed change this timestep
-        max_change = self.config.max_deployment_rate * dt
+        # Adaptive rate limiting - slower changes when near target
+        base_rate = self.config.max_deployment_rate
+        if abs(effective_error) < self.deadband * 2:  # Near target
+            rate_multiplier = 0.3  # Slower changes when close
+        else:
+            rate_multiplier = 1.0
+
+        max_change = base_rate * rate_multiplier * dt
 
         # Calculate actual change needed
         change_needed = desired_deployment - self.previous_deployment
@@ -220,6 +280,7 @@ class AirbrakeController:
         # Update state for next iteration
         self.previous_deployment = new_deployment
         self.previous_time = current_time
+        self.previous_error = effective_error
 
         return new_deployment
 
@@ -276,7 +337,9 @@ class AirbrakeController:
                 air_brakes.deployment_level = deployment_level
                 control_active = True
 
-        # Store data for analysis (including temperature)
+        # Store data for analysis (including temperature and error)
+        error = predicted_apogee_agl - self.config.target_apogee if predicted_apogee_agl > 0 else 0
+
         self.data['time'].append(time)
         self.data['sim_altitude_agl'].append(true_altitude_agl)
         self.data['raw_altitude_agl'].append(barometer_altitude_agl)
@@ -289,5 +352,6 @@ class AirbrakeController:
         self.data['control_active'].append(control_active)
         self.data['filtered_acceleration'].append(filtered_acceleration)
         self.data['temperature'].append(current_temp - 273.15 if current_temp else None)  # Store in Celsius
+        self.data['error'].append(error)
 
         return time, deployment_level, predicted_apogee_agl

@@ -12,7 +12,7 @@ class ControllerConfig:
     I_xx = 0.031
     I_yy = 0.031
     I_zz = 0.0001
-    rail_length = 3
+    rail_length = 2
     com_no_motor = 0.3
 
     # Fins
@@ -44,8 +44,16 @@ class ControllerConfig:
     model_v_std = 1
     model_a_std = 1000
 
+    model_y_std_2 = 0.05
+    model_v_std_2 = 1
+    model_a_std_2 = 50
+
     # Control parameters
-    kp_base = 20000.0
+    kp_base = 200.0
+    kd_base = 0.002
+    control_deadband = 0.1
+    hysteresis_factor = 0.9
+
     max_deployment_rate = 1   # deployment / time
     apogee_prediction_cd = 0.8   # Should match the rocket drag curve
     airbrake_drag = 0.5    # Max Cd from airbrake. Needs to match airbrake drag curve
