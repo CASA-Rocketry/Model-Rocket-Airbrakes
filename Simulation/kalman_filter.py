@@ -9,12 +9,13 @@ class KalmanAltitudeFilter:
         self.config = config
         self.initialized = False
         self.previous_time = None
+        self.time_factor = config.time_factor
 
         # State estimate vector [position, velocity, acceleration]
         self.x = np.array([[0.0], [0.0], [0.0]])
 
-        # Measurement vector
-        self.z = np.array([[0.0]])
+        # Measurement vector [altitude, acceleration]
+        self.z = np.array([[0.0], [0.0]])
 
         # 3x3 identity matrix
         self.I = np.eye(3)
@@ -22,11 +23,17 @@ class KalmanAltitudeFilter:
         # State transition matrix
         self.phi = np.eye(3)
 
-        # State to measurement matrix
-        self.H = np.array([[1.0, 0.0, 0.0]])
+        # State to measurement matrix [altitude, acceleration]
+        self.H = np.array([
+            [1.0, 0.0, 0.0],  # altitude measurement
+            [0.0, 0.0, 1.0]   # acceleration measurement
+        ])
 
-        # Measurement covariance
-        self.R = np.array([[config.alt_std * config.alt_std]])
+        # Measurement covariance [altitude, acceleration]
+        self.R = np.array([
+            [config.alt_std * config.alt_std, 0.0],
+            [0.0, config.accel_std * config.accel_std]
+        ])
 
         # Process covariance
         self.Q = np.array([
@@ -45,7 +52,7 @@ class KalmanAltitudeFilter:
         self.P = np.eye(3)
 
         # Kalman gain
-        self.K = np.zeros((3, 1))
+        self.K = np.zeros((3, 2))
 
     def initialize(self, initial_altitude_agl: float, sampling_rate: int):
         """Initialize filter with initial altitude"""
@@ -53,7 +60,7 @@ class KalmanAltitudeFilter:
         self.P = np.eye(3)  # Reset to identity matrix
         self.initialized = True
 
-    def updateKalmanFilter(self, measurement_agl: float, dt: float, time: float):
+    def updateKalmanFilter(self, measurement_agl: float, measurement_accel: float, dt: float, time: float):
         """Standard Kalman Filter - Predict then Update"""
         # 1. PREDICT STEP
         # Update phi matrix
@@ -65,7 +72,7 @@ class KalmanAltitudeFilter:
 
         if time > 1.5:
             self.Q = self.Q_2
-
+            self.R[1, 1] *= (1 + (time - 1.5)) ** 2 * self.time_factor
 
         # Predict state and covariance forward
         self.x = self.phi @ self.x
@@ -73,6 +80,7 @@ class KalmanAltitudeFilter:
 
         # 2. update step
         self.z[0, 0] = measurement_agl
+        self.z[1, 0] = measurement_accel
 
         # Calculate Kalman gain
         HPH_R = self.H @ self.P @ self.H.T + self.R
@@ -85,7 +93,7 @@ class KalmanAltitudeFilter:
         # Update covariance
         self.P = (self.I - self.K @ self.H) @ self.P
 
-    def update(self, measurement_agl: float, time: float, motor_burn_time: float):
+    def update(self, measurement_agl: float, measurement_accel: float, time: float, motor_burn_time: float):
         """Update filter and return estimates"""
         # Calculate dt
         if self.previous_time is not None:
@@ -96,7 +104,7 @@ class KalmanAltitudeFilter:
         dt = max(dt, 1e-6)  # Prevent zero dt
 
         # Update the Kalman filter
-        self.updateKalmanFilter(measurement_agl, dt, time)
+        self.updateKalmanFilter(measurement_agl, measurement_accel, dt, time)
 
         self.previous_time = time
 

@@ -143,7 +143,20 @@ class FlightPlotter:
         control_apogee = np.array(self.controller.data['predicted_apogee_agl'])[control_active]
 
         if len(control_times) > 0:
-            ax2.plot(control_times, control_apogee, 'darkred', linewidth=2, label='Predicted AGL')
+            # Remove duplicate time values to avoid stair-step appearance
+            unique_indices = []
+            if len(control_times) > 0:
+                unique_indices.append(0)  # Always include first point
+                for i in range(1, len(control_times)):
+                    # Only include point if time is different from previous
+                    if abs(control_times[i] - control_times[unique_indices[-1]]) > 1e-10:  # Small tolerance for floating point
+                        unique_indices.append(i)
+
+            if unique_indices:
+                filtered_times = control_times[unique_indices]
+                filtered_apogee = control_apogee[unique_indices]
+                ax2.plot(filtered_times, filtered_apogee, 'darkred', linewidth=2, label='Predicted AGL')
+
             ax2.axhline(y=self.config.target_apogee, color='forestgreen', linestyle='--', linewidth=2,
                         label='Target AGL')
         else:

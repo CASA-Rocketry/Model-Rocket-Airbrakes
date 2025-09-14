@@ -21,7 +21,7 @@ class AirbrakeController:
 
         # Temperature model parameters
         self.standard_lapse_rate = 0.0065  # K/m
-        self.standard_temp_sea_level = 288.15  # K (15°C)
+        self.standard_temp_sea_level = 288.15  # K (15 C)
 
         # Rate limiter state
         self.rate_limiter_initialized = False
@@ -34,30 +34,25 @@ class AirbrakeController:
         self.max_error_history = 5  # Keep last 5 errors for smoothing
 
         # Deadband and hysteresis parameters
-        self.deadband = getattr(config, 'control_deadband', 5.0)  # ±5m deadband around target
-        self.hysteresis_factor = getattr(config, 'hysteresis_factor', 0.8)  # Reduces oscillation
+        self.deadband = getattr(config, 'control_deadband')
+        self.hysteresis_factor = getattr(config, 'hysteresis_factor')  # Reduces oscillation
 
         # Data storage
         self.data = {
             'time': [], 'sim_altitude_agl': [], 'raw_altitude_agl': [], 'filtered_altitude_agl': [],
             'sim_velocity': [], 'filtered_velocity': [], 'deployment': [], 'predicted_apogee_agl': [],
             'motor_burning': [], 'control_active': [], 'filtered_acceleration': [], 'temperature': [],
-            'error': [], 'derivative_term': []
+            'error': [], 'derivative_term': [], 'raw_acceleration': []
         }
 
     def _get_atmospheric_temperature(self, altitude_asl, flight_time=None, environment=None):
 
         if self.ground_temperature is None:
-            # Initialize ground temperature from environment or use standard
-            if environment is not None:
-                try:
-                    ground_temp_celsius = environment.temperature(self.config.env_elevation)
-                    self.ground_temperature = ground_temp_celsius + 273.15
-                except:
-                    self.ground_temperature = self.standard_temp_sea_level - (
-                            self.config.env_elevation * self.standard_lapse_rate)
-            else:
-                # Use standard atmosphere
+            # Initialize ground temperature from environment
+            try:
+                ground_temp_celsius = environment.temperature(self.config.env_elevation)
+                self.ground_temperature = ground_temp_celsius + 273.15
+            except:
                 self.ground_temperature = self.standard_temp_sea_level - (
                         self.config.env_elevation * self.standard_lapse_rate)
 
@@ -66,7 +61,7 @@ class AirbrakeController:
         temperature = self.ground_temperature - (self.standard_lapse_rate * height_above_ground)
 
         # Ensure temperature doesn't go below reasonable limits
-        return max(temperature, 200.0)  # Don't go below -73°C
+        return max(temperature, 200.0)
 
     def _read_barometer(self, sensors, flight_time=None, environment=None):
         """Read barometer sensor and return altitude above ground level (AGL)."""
@@ -123,13 +118,32 @@ class AirbrakeController:
 
         return None, False, None
 
+    def _read_accelerometer(self, sensors):
+        """Read accelerometer sensor and return vertical acceleration."""
+        for sensor in sensors:
+            if (
+                    hasattr(sensor, "measured_data")
+                    and sensor.name == "Accelerometer"
+                    and hasattr(sensor, "measurement")
+                    and sensor.measurement is not None
+            ):
+                try:
+                    # For vertical flight, we want the z-component (along rocket axis)
+                    vertical_acceleration = float(sensor.measurement[2])
+
+                    return vertical_acceleration, True
+                except (ValueError, TypeError, AttributeError, IndexError) as e:
+                    print(f"Accelerometer read error: {e}")
+                    return None, False
+
+        return None, False
+
     def _predict_apogee(self, altitude_agl: float, velocity: float, current_deployment: float = 0.0):
         """Apogee predictor for control algorithm with combined rocket and airbrake drag"""
         if velocity <= 0:
             return altitude_agl
 
         # Calculate combined drag coefficient
-        # Rocket base drag coefficient
         rocket_cd = self.config.apogee_prediction_cd
 
         # Airbrake contribution based on current deployment level
@@ -139,7 +153,6 @@ class AirbrakeController:
         combined_cd = rocket_cd + airbrake_cd
 
         # Use rocket's reference area for drag calculation
-        # (airbrake area is already accounted for in the airbrake_drag coefficient)
         rocket_reference_area = 3.14159 * (self.config.rocket_radius ** 2)
 
         # Calculate drag parameter k with combined drag
@@ -153,13 +166,6 @@ class AirbrakeController:
 
         delta_altitude = (self.config.burnout_mass / (2 * k)) * math.log(log_arg)
         predicted_apogee_agl = altitude_agl + delta_altitude
-
-        # Sanity check
-        if predicted_apogee_agl < altitude_agl:
-            print(
-                f"Warning: Predicted apogee ({predicted_apogee_agl:.1f}m) below current altitude ({altitude_agl:.1f}m)")
-            print(f"  Combined Cd: {combined_cd:.3f} (rocket: {rocket_cd:.3f}, airbrake: {airbrake_cd:.3f})")
-            return altitude_agl
 
         return predicted_apogee_agl
 
@@ -195,11 +201,11 @@ class AirbrakeController:
         # Calculate error
         error = predicted_apogee_agl - self.config.target_apogee
 
-        # Apply deadband - no control action if within acceptable range
+        # Apply deadband
         if abs(error) < self.deadband:
             effective_error = 0.0
         else:
-            # Reduce effective error to create hysteresis
+            # Reduce effective error for hysteresis
             if error > 0:
                 effective_error = (error - self.deadband) * self.hysteresis_factor
             else:
@@ -226,7 +232,7 @@ class AirbrakeController:
                 if dt > 1e-6:
                     # Use smoothed derivative
                     error_derivative = self._smooth_error_derivative(effective_error, dt)
-                    kd = getattr(self.config, 'kd_base', 0.002)  # Add this to your config
+                    kd = getattr(self.config, 'kd_base', 0.002)
                     derivative_term = kd * error_derivative
                 else:
                     derivative_term = 0.0
@@ -241,7 +247,7 @@ class AirbrakeController:
         # Clamp desired deployment [0, 1]
         desired_deployment = float(np.clip(desired_deployment, 0.0, 1.0))
 
-        # Rate limiting (existing code with modifications)
+        # Rate limiting
         if not self.rate_limiter_initialized:
             self.previous_deployment = 0.0
             self.previous_time = current_time
@@ -251,10 +257,10 @@ class AirbrakeController:
 
         # Calculate actual time interval
         dt = current_time - self.previous_time
-        if dt <= 1e-6:  # Handle zero or negative time intervals
+        if dt <= 1e-6:
             return self.previous_deployment
 
-        # Adaptive rate limiting - slower changes when near target
+        # Adaptive rate limiting
         base_rate = self.config.max_deployment_rate
         if abs(effective_error) < self.deadband * 2:  # Near target
             rate_multiplier = 0.3  # Slower changes when close
@@ -286,7 +292,7 @@ class AirbrakeController:
 
     def control(self, time: float, sampling_rate: int, state: np.ndarray,
                 state_history, observed_variables, air_brakes, sensors, environment=None):
-        """Main control function with environment parameter for temperature"""
+        """Main control function"""
 
         # Convert ASL to AGL for all calculations
         true_altitude_asl = state[2]
@@ -296,6 +302,9 @@ class AirbrakeController:
         # Read barometer (returns AGL altitude and temperature)
         barometer_altitude_agl, barometer_available, current_temp = self._read_barometer(
             sensors, time, environment)
+        
+        # Read accelerometer (returns vertical acceleration)
+        accelerometer_reading, accelerometer_available = self._read_accelerometer(sensors)
 
         # Initialize defaults
         filtered_altitude_agl = barometer_altitude_agl
@@ -309,18 +318,22 @@ class AirbrakeController:
         # Get current deployment level from airbrakes
         current_deployment = getattr(air_brakes, 'deployment_level', 0.0)
 
-        # Process barometer data if available
-        if barometer_available:
-            if not self.filter.initialized:
-                # Initialize filter with AGL altitude
+        # Process sensor data if available
+        if barometer_available or accelerometer_available:
+            # Use fallback values if sensors are not available
+            altitude_measurement = barometer_altitude_agl if barometer_available else (filtered_altitude_agl or 0.0)
+            acceleration_measurement = accelerometer_reading if accelerometer_available else 0.0
+            
+            if not self.filter.initialized and barometer_available:
+                # Initialize filter with AGL altitude only if barometer is available
                 self.filter.initialize(barometer_altitude_agl, sampling_rate)
                 filtered_altitude_agl = barometer_altitude_agl
                 filtered_velocity = 0.0
                 filtered_acceleration = 0.0
-            else:
-                # Update filter with AGL altitude, get AGL results
+            elif self.filter.initialized:
+                # Update filter with both measurements
                 filtered_altitude_agl, filtered_velocity = self.filter.update(
-                    barometer_altitude_agl, time, self.motor_burn_time)
+                    altitude_measurement, acceleration_measurement, time, self.motor_burn_time)
 
                 filtered_acceleration = self.filter.getAEstimate()
 
@@ -353,5 +366,6 @@ class AirbrakeController:
         self.data['filtered_acceleration'].append(filtered_acceleration)
         self.data['temperature'].append(current_temp - 273.15 if current_temp else None)  # Store in Celsius
         self.data['error'].append(error)
+        self.data['raw_acceleration'].append(accelerometer_reading)
 
         return time, deployment_level, predicted_apogee_agl

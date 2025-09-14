@@ -1,4 +1,4 @@
-from rocketpy import Environment, Rocket, Flight, Barometer
+from rocketpy import Environment, Rocket, Flight, Barometer, Accelerometer
 from rocketpy.motors import GenericMotor
 import pandas as pd
 import numpy as np
@@ -55,6 +55,22 @@ class SimulationRunner:
             name="Barometer"
         )
         rocket.add_sensor(barometer, position=(0, 0, 0.35))
+
+        accelerometer = Accelerometer(
+            sampling_rate=self.config.sampling_rate,
+            measurement_range=self.config.accel_range,
+            resolution=self.config.accel_resolution,
+            noise_density=self.config.accel_noise_density,
+            noise_variance=self.config.accel_noise_variance,
+            random_walk_density=self.config.accel_random_walk_density,
+            constant_bias=self.config.accel_constant_bias,
+            operating_temperature=20,
+            temperature_bias=self.config.accel_temperature_bias,
+            temperature_scale_factor=self.config.accel_temperature_scale_factor,
+            cross_axis_sensitivity=self.config.accel_cross_axis_sensitivity,
+            name="Accelerometer"
+        )
+        rocket.add_sensor(accelerometer, position=(0, 0, 0.35))
 
         self.controller = AirbrakeController(self.config, motor.burn_out_time)
 
@@ -154,6 +170,10 @@ class SimulationRunner:
             # Add filtered acceleration if available
             if 'filtered_acceleration' in self.controller.data:
                 df['Filtered_Acceleration_ms2'] = self.controller.data['filtered_acceleration']
+            
+            # Add raw accelerometer data if available
+            if 'raw_acceleration' in self.controller.data:
+                df['Raw_Accelerometer_ms2'] = self.controller.data['raw_acceleration']
 
             # Calculate errors
             df['Altitude_Error_m'] = np.abs(df['Simulated_Altitude_AGL_m'] - df['Filtered_Altitude_AGL_m'])
