@@ -10,6 +10,7 @@ class KalmanAltitudeFilter:
         self.initialized = False
         self.previous_time = None
         self.time_factor = config.time_factor
+        self.burn_time = config.burn_time
 
         # State estimate vector [position, velocity, acceleration]
         self.x = np.array([[0.0], [0.0], [0.0]])
@@ -30,7 +31,7 @@ class KalmanAltitudeFilter:
         ])
 
         # Measurement covariance [altitude, acceleration]
-        self.R = np.array([
+        self.R_0 = np.array([
             [config.alt_std * config.alt_std, 0.0],
             [0.0, config.accel_std * config.accel_std]
         ])
@@ -70,9 +71,10 @@ class KalmanAltitudeFilter:
             [0.0, 0.0, 1.0]
         ])
 
-        if time > 1.5:
+        self.R = self.R_0
+        if time > self.burn_time:
+            self.R[1, 1] = (1 + (time - self.burn_time) )** 2 * self.time_factor * self.R_0[1,1]
             self.Q = self.Q_2
-            self.R[1, 1] *= (1 + (time - 1.5)) ** 2 * self.time_factor
 
         # Predict state and covariance forward
         self.x = self.phi @ self.x

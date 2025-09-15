@@ -72,7 +72,7 @@ class SimulationRunner:
         )
         rocket.add_sensor(accelerometer, position=(0, 0, 0.35))
 
-        self.controller = AirbrakeController(self.config, motor.burn_out_time)
+        self.controller = AirbrakeController(self.config, self.config.burn_time)
 
         # Create a wrapper function that passes the environment to the controller
         def controller_wrapper(time, sampling_rate, state, state_history,

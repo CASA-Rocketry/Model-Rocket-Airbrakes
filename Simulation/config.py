@@ -7,8 +7,8 @@ class ControllerConfig:
     rocket_radius = 0.028
     airbrake_area = 3.14159 * rocket_radius ** 2 # This is just the rocket cross-section
     air_density = 1.2 # kg/m3
-    burnout_mass = 0.565
-    dry_mass = burnout_mass - 0.027
+    dry_mass = 0.525
+    burnout_mass = dry_mass + 0.027
     I_xx = 0.031 # Get from CAD file (kg-m3)
     I_yy = 0.031
     I_zz = 0.0001
@@ -61,13 +61,13 @@ class ControllerConfig:
     time_factor = 0.2 # used for increasing accelerometer variance as the rocket becomes less vertical
     model_y_std_2 = 0.05
     model_v_std_2 = 1
-    model_a_std_2 = 50
+    model_a_std_2 = 20
 
     # Control parameters
-    kp_base = 200.0
-    kd_base = 0.008
-    control_deadband = 0.2
-    hysteresis_factor = 0.7 # used to stop oscillations around deadband edge
+    kp_base = 400.0
+    kd_base = 0.2
+    control_deadband = 0.1
+    hysteresis_factor = 0.8 # used to stop oscillations around deadband edge
 
     max_deployment_rate = 1.5   # deployment / time
     apogee_prediction_cd = 0.8   # Should match the rocket drag curve
@@ -79,7 +79,7 @@ class ControllerConfig:
     calibration_point = 0.0
 
     # Timing parameters
-    burn_time = 1.5
+    burn_time = 1.3
     target_duration = 37.5 # Not implemented yet
 
     # Constants

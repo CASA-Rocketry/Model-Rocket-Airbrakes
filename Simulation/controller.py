@@ -46,13 +46,13 @@ class AirbrakeController:
         }
 
     def _get_atmospheric_temperature(self, altitude_asl, flight_time=None, environment=None):
-
         if self.ground_temperature is None:
-            # Initialize ground temperature from environment
             try:
+                if environment is None:
+                    raise Exception("No environment")
                 ground_temp_celsius = environment.temperature(self.config.env_elevation)
                 self.ground_temperature = ground_temp_celsius + 273.15
-            except:
+            except Exception as e:
                 self.ground_temperature = self.standard_temp_sea_level - (
                         self.config.env_elevation * self.standard_lapse_rate)
 
