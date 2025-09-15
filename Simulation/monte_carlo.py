@@ -394,6 +394,7 @@ class MonteCarloAnalysis:
         plt.figure(figsize=(12, 8))
 
         # Plot all deployment curves
+        j, k, l = 0, 0, 0
         for i, data in enumerate(self.controller_data):
             times = np.array(data['time'])
             deployments = np.array(data['deployment'])
@@ -403,15 +404,27 @@ class MonteCarloAnalysis:
             if abs(error) <= 0.5:
                 color = 'green'
                 alpha = 0.7
-                label = 'Within 0.5m' if i == 0 else None
+                if j == 0:
+                    label = 'Within ±0.5m'
+                    j = 1
+                else:
+                    label = None
             elif abs(error) <= 2:
                 color = 'orange'
                 alpha = 0.5
-                label = 'Within ±2m' if i == 0 else None
+                if k == 0:
+                    label = 'Within ±2m'
+                    k = 1
+                else:
+                    label = None
             else:
                 color = 'red'
                 alpha = 0.3
-                label = 'Beyond ±2m' if i == 0 else None
+                if l == 0:
+                    label = 'Beyond ±2m'
+                    l = 1
+                else:
+                    label = None
 
             plt.plot(times, deployments, color=color, alpha=alpha, linewidth=1, label=label)
 
@@ -456,7 +469,7 @@ def main():
     config = ControllerConfig()
 
     # Create
-    analyzer = MonteCarloAnalysis(config, n_simulations=20)
+    analyzer = MonteCarloAnalysis(config, n_simulations=2)
 
     print("Starting Monte Carlo Analysis of Airbrake System")
     print(f"Configuration: Target = {config.target_apogee}m")

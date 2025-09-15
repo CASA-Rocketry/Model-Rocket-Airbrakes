@@ -7,7 +7,7 @@ class ControllerConfig:
     rocket_radius = 0.028
     airbrake_area = 3.14159 * rocket_radius ** 2 # This is just the rocket cross-section
     air_density = 1.2 # kg/m3
-    dry_mass = 0.525
+    dry_mass = 0.53
     burnout_mass = dry_mass + 0.027
     I_xx = 0.031 # Get from CAD file (kg-m3)
     I_yy = 0.031
