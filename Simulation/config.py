@@ -70,7 +70,7 @@ class ControllerConfig:
     hysteresis_factor = 0.8 # used to stop oscillations around deadband edge
 
     max_deployment_rate = 1.5   # deployment / time
-    apogee_prediction_cd = 0.8   # Should match the rocket drag curve
+    apogee_prediction_cd = 0.8   #Should match the rocket drag curve
     airbrake_drag = 0.5    # Max Cd from airbrake. Needs to match airbrake drag curve
 
     # Calibration parameters

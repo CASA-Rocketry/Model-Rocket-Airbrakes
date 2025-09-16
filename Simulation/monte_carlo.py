@@ -267,8 +267,7 @@ class MonteCarloAnalysis:
         start_time = time.time()
 
         for i in range(self.n_simulations):
-            if i % 10 == 0:
-                print(f"  Running simulation {i + 1}/{self.n_simulations}")
+            print(f"  Running simulation {i + 1}/{self.n_simulations}")
 
             result = self.run_single_simulation(i + 1)
             if result is not None:
@@ -282,10 +281,6 @@ class MonteCarloAnalysis:
         # Debug: Check deployment levels
         if self.results:
             max_deps = [r['max_deployment'] for r in self.results]
-            print(f"\nDEBUG - Deployment Statistics:")
-            print(f"  Max deployments range: {min(max_deps):.3f} to {max(max_deps):.3f}")
-            print(f"  Mean max deployment: {np.mean(max_deps):.3f}")
-            print(f"  Deployments = 1.0: {sum(1 for d in max_deps if d >= 0.99)}/{len(max_deps)}")
 
             mean_deps = [r['mean_deployment'] for r in self.results if r['mean_deployment'] > 0]
             if mean_deps:
@@ -469,7 +464,7 @@ def main():
     config = ControllerConfig()
 
     # Create
-    analyzer = MonteCarloAnalysis(config, n_simulations=2)
+    analyzer = MonteCarloAnalysis(config, n_simulations=20)
 
     print("Starting Monte Carlo Analysis of Airbrake System")
     print(f"Configuration: Target = {config.target_apogee}m")
