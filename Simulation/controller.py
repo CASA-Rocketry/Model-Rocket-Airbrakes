@@ -45,75 +45,87 @@ class AirbrakeController:
             'error': [], 'derivative_term': [], 'raw_acceleration': []
         }
 
-    def _get_atmospheric_temperature(self, altitude_asl, flight_time=None, environment=None):
-        if self.ground_temperature is None:
-            try:
-                if environment is None:
-                    raise Exception("No environment")
-                ground_temp_celsius = environment.temperature(self.config.env_elevation)
-                self.ground_temperature = ground_temp_celsius + 273.15
-            except Exception as e:
-                self.ground_temperature = self.standard_temp_sea_level - (
-                        self.config.env_elevation * self.standard_lapse_rate)
+    def _read_barometer(self, sensors, flight_time=None, environment=None, true_altitude=None):
+        """Read barometer using hypsometric formula for altitude calculation
 
-        # Calculate temperature at altitude using lapse rate
-        height_above_ground = altitude_asl - self.config.env_elevation
-        temperature = self.ground_temperature - (self.standard_lapse_rate * height_above_ground)
+        The hypsometric equation:
+        h2 - h1 = (R * T_mean / g) * ln(P1 / P2)
 
-        # Ensure temperature doesn't go below reasonable limits
-        return max(temperature, 200.0)
+        Where:
+        - h2 - h1 is the thickness of the layer (altitude difference)
+        - R is specific gas constant for dry air
+        - T_mean is mean virtual temperature of the layer
+        - g is gravitational acceleration
+        - P1, P2 are pressures at bottom and top of layer
+        """
+        import math
 
-    def _read_barometer(self, sensors, flight_time=None, environment=None):
-        """Read barometer sensor and return altitude above ground level (AGL)."""
         # Physical constants
-        R = 8.314462618  # J/(mol*K)
-        M = 0.0289644  # kg/mol (air)
-        g = 9.80665  # m/s^2
+        R_d = 287.05  # Specific gas constant for dry air (J/(kg·K))
+        g = 9.80665  # Gravitational acceleration (m/s²)
+
+        # Early return if no environment provided
+        if environment is None:
+            return None, False, None
 
         for sensor in sensors:
-            if (
-                    hasattr(sensor, "measured_data")
-                    and sensor.name == "Barometer"
-                    and hasattr(sensor, "measurement")
-                    and sensor.measurement is not None
-            ):
+            if (sensor.name == "Barometer" and
+                    hasattr(sensor, "measurement") and
+                    sensor.measurement is not None):
                 try:
+                    # Get pressure from sensor (in Pa)
                     pressure_pa = float(sensor.measurement)
-                    if pressure_pa <= 0:
+
+                    # Validate pressure reading
+                    if pressure_pa <= 0 or pressure_pa > 120000:  # Max ~120kPa at sea level
                         return None, False, None
 
-                    # Initialize ground reference
+                    # Initialize ground reference on first reading
                     if self.ground_pressure is None:
                         self.ground_pressure = pressure_pa
-                        # Get initial temperature
-                        self.ground_temperature = self._get_atmospheric_temperature(
-                            self.config.env_elevation, flight_time, environment)
+                        self.ground_temperature = environment.temperature(self.config.env_elevation)
+                        # At initialization, we're at ground level
+                        return 0.0, True, self.ground_temperature
 
-                    if self.ground_pressure and self.ground_pressure > 0:
-                        # First, get rough altitude estimate using ground temperature
-                        T_ground = self.ground_temperature
-                        exponent = (R * self.standard_lapse_rate) / (g * M)
-                        ratio = pressure_pa / self.ground_pressure
-                        rough_altitude = self.config.env_elevation + (T_ground / self.standard_lapse_rate) * (
-                                1.0 - ratio ** exponent)
+                    # Calculate pressure ratio
+                    pressure_ratio = self.ground_pressure / pressure_pa
 
-                        # Get temperature at estimated altitude
-                        T_altitude = self._get_atmospheric_temperature(rough_altitude, flight_time, environment)
+                    # Skip calculation if pressure hasn't changed significantly
+                    if abs(pressure_ratio - 1.0) < 1e-6:
+                        return 0.0, True, self.ground_temperature
 
-                        # Use average temperature for more accurate calculation
-                        T_avg = (T_ground + T_altitude) / 2.0
+                    # First estimate using ground temperature
+                    h_estimate = (R_d * self.ground_temperature / g) * math.log(pressure_ratio)
 
-                        # Recalculate altitude with average temperature
-                        altitude_asl = self.config.env_elevation + (T_avg / self.standard_lapse_rate) * (
-                                1.0 - ratio ** exponent)
-                        altitude_agl = altitude_asl - self.config.env_elevation
+                    # Get temperature at estimated altitude
+                    altitude_asl_estimate = self.config.env_elevation + h_estimate
+                    temp_at_altitude = environment.temperature(altitude_asl_estimate)
 
-                        return altitude_agl, True, T_altitude
-                    else:
-                        return None, False, None
+                    # Calculate accurate mean temperature (arithmetic mean of layer)
+                    T_mean = (self.ground_temperature + temp_at_altitude) / 2.0
 
-                except (ValueError, TypeError, AttributeError) as e:
+                    # Recalculate altitude with accurate mean temperature
+                    altitude_agl = (R_d * T_mean / g) * math.log(pressure_ratio)
+
+                    # For even higher accuracy, do one more refinement
+                    altitude_asl_refined = self.config.env_elevation + altitude_agl
+                    temp_at_altitude_refined = environment.temperature(altitude_asl_refined)
+                    T_mean_refined = (self.ground_temperature + temp_at_altitude_refined) / 2.0
+
+                    # Final altitude calculation
+                    altitude_agl = (R_d * T_mean_refined / g) * math.log(pressure_ratio)
+                    altitude_asl = self.config.env_elevation + altitude_agl
+
+                    # Get temperature at final calculated altitude
+                    current_temp = environment.temperature(altitude_asl)
+
+                    return altitude_agl, True, current_temp
+
+                except (ValueError, TypeError, AttributeError, ZeroDivisionError) as e:
                     print(f"Barometer read error: {e}")
+                    return None, False, None
+                except OverflowError:
+                    print(f"Barometer calculation overflow - pressure ratio too extreme")
                     return None, False, None
 
         return None, False, None
@@ -301,8 +313,8 @@ class AirbrakeController:
 
         # Read barometer (returns AGL altitude and temperature)
         barometer_altitude_agl, barometer_available, current_temp = self._read_barometer(
-            sensors, time, environment)
-        
+            sensors, time, environment, true_altitude_agl)
+
         # Read accelerometer (returns vertical acceleration)
         accelerometer_reading, accelerometer_available = self._read_accelerometer(sensors)
 
@@ -323,7 +335,7 @@ class AirbrakeController:
             # Use fallback values if sensors are not available
             altitude_measurement = barometer_altitude_agl if barometer_available else (filtered_altitude_agl or 0.0)
             acceleration_measurement = accelerometer_reading if accelerometer_available else 0.0
-            
+
             if not self.filter.initialized and barometer_available:
                 # Initialize filter with AGL altitude only if barometer is available
                 self.filter.initialize(barometer_altitude_agl, sampling_rate)

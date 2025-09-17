@@ -5,7 +5,6 @@ from plotting import FlightPlotter
 
 logging.basicConfig(level=logging.WARNING)
 
-
 def main():
     config = ControllerConfig()
     runner = SimulationRunner(config)

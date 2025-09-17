@@ -34,7 +34,7 @@ class ControllerConfig:
     longitude = 92
     terminate_on_apogee = True
 
-    # Sampling
+    # Control algorithm frequency
     sampling_rate: int = 20
 
     # Accelerometer parameters

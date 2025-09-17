@@ -161,14 +161,13 @@ class MonteCarloAnalysis:
             # Create controller with varied config
             controller = AirbrakeController(varied_config, self.config.burn_time)
 
-            # Store environment reference for the controller
             env_ref = environment
 
             def controller_wrapper(time, sampling_rate, state, state_history,
                                    observed_variables, air_brakes, sensors):
                 return controller.control(
                     time, sampling_rate, state, state_history,
-                    observed_variables, air_brakes, sensors, None
+                    observed_variables, air_brakes, sensors, env_ref
                 )
 
 
@@ -464,7 +463,7 @@ def main():
     config = ControllerConfig()
 
     # Create
-    analyzer = MonteCarloAnalysis(config, n_simulations=20)
+    analyzer = MonteCarloAnalysis(config, n_simulations=100)
 
     print("Starting Monte Carlo Analysis of Airbrake System")
     print(f"Configuration: Target = {config.target_apogee}m")

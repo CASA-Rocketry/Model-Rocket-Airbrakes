@@ -5,6 +5,7 @@ import numpy as np
 from controller import AirbrakeController
 from config import ControllerConfig
 
+
 class SimulationRunner:
     def __init__(self, config: ControllerConfig):
         self.config = config
@@ -12,6 +13,10 @@ class SimulationRunner:
         self.environment = None  # Store environment reference
 
     def setup_rocket(self):
+        # Ensure environment is set up before creating rocket
+        if self.environment is None:
+            raise ValueError("Environment must be set up before creating rocket")
+
         rocket = Rocket(
             radius=self.config.rocket_radius,
             mass=self.config.dry_mass,
@@ -35,12 +40,14 @@ class SimulationRunner:
 
         rocket.add_nose(length=0.13, kind="von karman", position=0)
         rocket.add_trapezoidal_fins(
-            n=self.config.n_fins, root_chord=self.config.root_chord, tip_chord=self.config.tip_chord, span=self.config.span,
+            n=self.config.n_fins, root_chord=self.config.root_chord, tip_chord=self.config.tip_chord,
+            span=self.config.span,
             position=self.config.fin_position, cant_angle=self.config.cant_angle)
         rocket.add_parachute(
             name="Chute", cd_s=self.config.chute_cd, trigger=self.config.deployment_alt, sampling_rate=10,
             lag=0, noise=(0, 8.3, 0.5))
 
+        # Add barometer sensor with RocketPy's built-in pressure measurement
         barometer = Barometer(
             sampling_rate=self.config.sampling_rate,
             measurement_range=100000,
@@ -72,11 +79,12 @@ class SimulationRunner:
         )
         rocket.add_sensor(accelerometer, position=(0, 0, 0.35))
 
+        # Initialize controller after sensors are added to rocket
         self.controller = AirbrakeController(self.config, self.config.burn_time)
 
         # Create a wrapper function that passes the environment to the controller
         def controller_wrapper(time, sampling_rate, state, state_history,
-                             observed_variables, air_brakes, sensors):
+                               observed_variables, air_brakes, sensors):
             return self.controller.control(
                 time, sampling_rate, state, state_history,
                 observed_variables, air_brakes, sensors, self.environment
@@ -170,7 +178,7 @@ class SimulationRunner:
             # Add filtered acceleration if available
             if 'filtered_acceleration' in self.controller.data:
                 df['Filtered_Acceleration_ms2'] = self.controller.data['filtered_acceleration']
-            
+
             # Add raw accelerometer data if available
             if 'raw_acceleration' in self.controller.data:
                 df['Raw_Accelerometer_ms2'] = self.controller.data['raw_acceleration']
@@ -205,7 +213,7 @@ class SimulationRunner:
                     print(f"Warning: Could not add flight data: {e}")
 
             # Export to CSV
-            filename = 'rocket_flight_data.csv'
+            filename = 'sim_flight_data.csv'
             df.to_csv(filename, index=False)
             print(f"\nData exported to {filename}")
             print(f"Rows: {len(df)}, Columns: {len(df.columns)}")
@@ -219,6 +227,7 @@ class SimulationRunner:
             print(f"Error exporting CSV: {e}")
             import traceback
             traceback.print_exc()
+
     def print_summary(self, flight):
         """Print flight summary"""
         if flight is None:
@@ -226,7 +235,8 @@ class SimulationRunner:
             print(f"FLIGHT SUMMARY")
             print(f"{'=' * 50}")
             print("ERROR: Flight simulation failed")
-            print(f"Data Points: {len(self.controller.data['time']) if self.controller and self.controller.data['time'] else 0}")
+            print(
+                f"Data Points: {len(self.controller.data['time']) if self.controller and self.controller.data['time'] else 0}")
             print(f"{'=' * 50}")
             return
 
@@ -240,35 +250,11 @@ class SimulationRunner:
             print(f"{'=' * 50}")
             print(f"Apogee AGL: {flight_apogee_agl:.1f}m (Target: {self.config.target_apogee:.1f}m)")
             print(f"Error: {error:.1f}m ({error_pct:.1f}%)")
-            print(f"Flight Time: {max(self.controller.data['time']) if self.controller and self.controller.data['time'] else 'N/A'}s")
-            print(f"Data Points: {len(self.controller.data['time']) if self.controller and self.controller.data['time'] else 0}")
+            print(
+                f"Flight Time: {max(self.controller.data['time']) if self.controller and self.controller.data['time'] else 'N/A'}s")
+            print(
+                f"Data Points: {len(self.controller.data['time']) if self.controller and self.controller.data['time'] else 0}")
             print(f"{'=' * 50}")
         except Exception as e:
             print(f"Error printing summary: {e}")
 
-    def run_full_simulation(self):
-        """Run complete simulation with analysis"""
-        try:
-            print("Setting up simulation...")
-            print(f"Target Apogee: {self.config.target_apogee:.1f}m AGL")
-            print(f"Environment Elevation: {self.config.env_elevation}m ASL")
-            print(f"Apogee Prediction Cd: {self.config.apogee_prediction_cd}")
-
-            environment = self.setup_environment()
-            rocket, motor = self.setup_rocket()
-
-            print("Running simulation...")
-            flight = self.run_simulation(rocket, environment)
-
-            print("Exporting data...")
-            self.export_to_csv(flight)
-
-            self.print_summary(flight)
-
-            return flight
-
-        except Exception as e:
-            print(f"Simulation error: {e}")
-            import traceback
-            traceback.print_exc()
-            return None  # Return None if simulation fails
