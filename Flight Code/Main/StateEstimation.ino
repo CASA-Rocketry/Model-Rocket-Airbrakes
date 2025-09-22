@@ -3,9 +3,9 @@
 // //Noise estimates
 #define ALT_STD 0.173932 //noise of position observation
 // //#define ACC_STD 
-#define MODEL_Y_STD 0.01
-#define MODEL_V_STD 0.01
-#define MODEL_A_STD 0.01
+#define MODEL_Y_STD 0.02
+#define MODEL_V_STD 0.5
+#define MODEL_A_STD 0.1
 
 BLA::Matrix<3, 3> I = {1, 0, 0,
                        0, 1, 0,

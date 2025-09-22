@@ -6,14 +6,29 @@
 
 //Constnats
 #define MIN_DEPLOYMENT_DEGREES 0
-#define MAX_DEPLOYMENT_DEGREES 135
+#define MAX_DEPLOYMENT_DEGREES 180
+
 
 Servo servo;
 
 
 void initializeServo(){
   servo.attach(PWM1);
+
+  //Testing
+
+  //Slow pass
+  for(double a = 0; a <= PI; a += PI/100){
+    setServoDeployment(sin(a));
+    delay(50);
+  }
+
+  //Fast pass
+  delay(1000);
+  setServoDeployment(1);
+  delay(1000);
   setServoDeployment(0);
+  delay(1000); 
 }
 
 

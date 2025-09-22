@@ -1,6 +1,6 @@
  #define SERIAL true //false during flight
- #define SIMULATION false //false on real flight
- #define SIMULATION_FULL_REPLAY true //false on real flight or when tuning through sim
+ #define SIMULATION true //false on real flight
+ #define SIMULATION_FULL_REPLAY false //false on real flight or when tuning through sim
 
 
 //Shared pin definitions
@@ -9,6 +9,7 @@
 #define MOSI 11
 
 #define BURN_TIME 1.5
+#define ALTIMETER_LOCKOUT 60 //altimeter delay (seconds)
 
 //Logging variables for global scope convinience
 #define ITEMS_LOGGED 8
@@ -29,21 +30,39 @@ enum FlightMode {
 } mode = LAUNCH_PAD;
 
 void setup() {
-  //Initialize hardware
-  initializeLog(); //If sim, this opens the sim file
-  initializeServo();
-  initializeLED();
-  initializeAlt();
-  initializeIMU();
-
   if (!SIMULATION){
-    setLEDColor(255, 0, 0); //Red for flight
+    setLEDColor(0, 255, 0); //Green for flight
     initializeSim();
   }
   else
-    setLEDColor(0, 255, 0); //Green for sim replay
+    setLEDColor(255, 0, 0); //Green for sim replay
+
+
+  //Initialize hardware
+  initializeLog(); //If sim, this opens the sim file
+  initializeLED();
+
+  for(int i = 0; i < 5; i++){
+      setTone(5000, 500);
+      delay(1000);
+    }
+
+  delay(5000);
+
+  initializeServo();
+
+  if(!SIMULATION){
+    //Warning tones
+    
+    initializeIMU();
+    delay(ALTIMETER_LOCKOUT * 1000);
+    initializeAlt();
+  }
+
+  
 
   setGreenLED(HIGH); //Signify successful
+  //setServoDeployment(0.05);
 }
 
 void loop() {
@@ -51,7 +70,10 @@ void loop() {
     updateSim();
   
   //Update timers
-  timeNewMillis = millis();
+  if(SIMULATION)
+    timeNewMillis = getSimMillis();
+  else
+    timeNewMillis = millis();
   dt = (timeNewMillis - timeMillis)/1000.0;
   timeMillis = timeNewMillis;
   logLine[0] = String(timeMillis);
@@ -111,5 +133,8 @@ void loop() {
 
   if(!SIMULATION)
     updateSD();
+
+
+  Serial.println(getYEstimate());
   delay(10);
 }

@@ -34,6 +34,8 @@ float getRawAlt(){
 
 
 float getCalibratedAlt(){
+  if(SIMULATION)
+    return getSimAltitude();
   float calibratedAlt = getRawAlt() + offset;
   logLine[5] = String(calibratedAlt);
 
@@ -58,5 +60,7 @@ void calibrateAlt(){
   offset = CALIBRATION_POINT - average;
   Serial.print("Calibration complete! ... Average: ");
   Serial.println(average);
+
+  setTone(1000, 3000);
 }
 

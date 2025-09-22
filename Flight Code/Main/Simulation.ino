@@ -1,6 +1,7 @@
 #include <String>
 
-#define SIM_COLUMNS 21 //For Riley's sim
+//#define SIM_COLUMNS 21 //For Riley's sim
+#define SIM_COLUMNS 8 //
 
 String simLine[SIM_COLUMNS] = {};
 
@@ -14,7 +15,7 @@ void updateSim(){
 }
 
 float getSimServoDeployment(){
-  return simLine[6].toFloat();
+  return simLine[7].toFloat();
 }
 
 float getSimPressure(){
@@ -22,18 +23,22 @@ float getSimPressure(){
 }
 
 float getSimAltitude(){
-  return simLine[16].toFloat();
+  return simLine[5].toFloat();
+}
+
+float getSimMillis(){
+  return simLine[0].toFloat();
 }
 
 float getSimAccelerationZ(){
-  return simLine[18].toFloat();
+  return simLine[4].toFloat();
 }
 
 void getNewLine () {
   if (!flightFile.available())
     return; //end if no new data
 
-  Serial.println("NEW LINE");
+  //Serial.println("NEW LINE");
   char byte;
   String entry; //
   // while(flightFile.available()){
@@ -49,7 +54,7 @@ void getNewLine () {
       //if(byte == '\n') continue;
       if(byte == ',' || byte == '\n'){
         simLine[i] = entry;
-        Serial.println(entry);
+        //Serial.println(entry);
         break;
       } else
         entry += byte;

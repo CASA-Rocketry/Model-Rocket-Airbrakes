@@ -10,7 +10,7 @@ File flightFile;
 void initializeLog(){
   if(SERIAL){
     Serial.begin(9600);
-    while(!Serial);
+    //while(!Serial);
   }
 
   if(!SD.begin(SD_CS)){
