@@ -4,14 +4,19 @@ float gx, gy, gz, ax, ay, az, mx, my, mz;
 
 
 void updateIMU(){
-  if(IMU.accelerationAvailable())
-    IMU.readAcceleration(ay, az, ax); //Redefined reference frame
-  
-  az *= -1;
-  logLine[2] = String(ax);
-  logLine[3] = String(ay);
-  logLine[4] = String(az);
-
+  if(SIMULATION){
+    ax = simLine[3].toFloat();
+    ay = simLine[4].toFloat();
+    az = simLine[5].toFloat();
+  } else{
+    if(IMU.accelerationAvailable())
+      IMU.readAcceleration(ay, az, ax); //Redefined reference frame
+    
+    az *= -1;
+  }
+  logLine[3] = String(ax);
+  logLine[4] = String(ay);
+  logLine[5] = String(az);
 }
 
 void initializeIMU(){

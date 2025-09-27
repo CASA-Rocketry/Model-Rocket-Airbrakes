@@ -15,8 +15,6 @@ Servo servo;
 void initializeServo(){
   servo.attach(PWM1);
 
-  //Testing
-
   //Slow pass
   for(double a = 0; a <= PI; a += PI/100){
     setServoDeployment(sin(a));
@@ -34,7 +32,7 @@ void initializeServo(){
 
 //Deployment ranges from 0 to 1
 void setServoDeployment(float deployment){
-  logLine[7] = String(deployment);
+  logLine[11] = String(deployment);
   double clampedDeployment = clamp(deployment, 0, 1); //May remove if this is verified earlier
   double angle = MIN_DEPLOYMENT_DEGREES + (MAX_DEPLOYMENT_DEGREES - MIN_DEPLOYMENT_DEGREES) * clampedDeployment;
   

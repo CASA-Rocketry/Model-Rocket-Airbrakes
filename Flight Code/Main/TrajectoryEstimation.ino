@@ -6,7 +6,7 @@ float getDragCoefficient(){
 //Returns estimated apogee in meters
 float getApogeeEstimate(){
   float apogeeEstimate = 0; //Insert math here
-  logLine[6] = String(apogeeEstimate);
+  logLine[10] = String(apogeeEstimate);
   return apogeeEstimate;
 }
 

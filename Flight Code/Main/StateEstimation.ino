@@ -41,11 +41,12 @@ void updateKalmanFilter(){
   //Project to next time stamp
   x = phi * x;
   P = phi * P * ~phi + Q;
+
+  //Update log
+  logLine[7] = String(x(0));
+  logLine[8] = String(x(1));
+  logLine[9] = String(x(2));
 }
-
-
-
-
 
 float getYEstimate(){
   return x(0);

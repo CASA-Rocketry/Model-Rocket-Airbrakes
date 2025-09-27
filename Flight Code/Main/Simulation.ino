@@ -1,10 +1,5 @@
 #include <String>
 
-//#define SIM_COLUMNS 21 //For Riley's sim
-#define SIM_COLUMNS 8 //
-
-String simLine[SIM_COLUMNS] = {};
-
 void initializeSim(){
   getNewLine(); //Clear header titles 
   getNewLine(); //Load first line
@@ -12,26 +7,6 @@ void initializeSim(){
 
 void updateSim(){
   getNewLine();
-}
-
-float getSimServoDeployment(){
-  return simLine[7].toFloat();
-}
-
-float getSimPressure(){
-  return 0;
-}
-
-float getSimAltitude(){
-  return simLine[5].toFloat();
-}
-
-float getSimMillis(){
-  return simLine[0].toFloat();
-}
-
-float getSimAccelerationZ(){
-  return simLine[4].toFloat();
 }
 
 void getNewLine () {
@@ -47,7 +22,7 @@ void getNewLine () {
   //   delay(100);
   // }
 
-  for(int i = 0; i < SIM_COLUMNS; i++){ 
+  for(int i = 0; i < ITEMS_LOGGED; i++){ 
     entry = "";
     while(flightFile.available()){
       byte = flightFile.read();

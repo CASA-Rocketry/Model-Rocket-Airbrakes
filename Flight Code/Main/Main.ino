@@ -1,6 +1,6 @@
  #define SERIAL true //false during flight
  #define SIMULATION true //false on real flight
- #define SIMULATION_FULL_REPLAY false //false on real flight or when tuning through sim
+
 
 
 //Shared pin definitions
@@ -12,9 +12,11 @@
 #define ALTIMETER_LOCKOUT 60 //altimeter delay (seconds)
 
 //Logging variables for global scope convinience
-#define ITEMS_LOGGED 8
+#define ITEMS_LOGGED 12
 
-String logLine[] = {"time stamp", "raw pressure", "raw ax", "raw ay", "raw az", "calibrated alt", "estimated apogee", "servo deployment"};
+//Header for log line. ** indicates fed in to sim
+String logLine[] = {"**time stamp**",	"raw pressure",	"raw temperature", "**raw ax**",	"**raw ay**",	"**raw az**",	"**calculated alt**",	"y estimate",	"v estimate",	"a estimate",	"apogee estimate", "servo deployment"};
+String simLine[ITEMS_LOGGED] = {};
 
 unsigned long timeMillis = 0, timeNewMillis;
 unsigned long launchMillis, landMillis;
@@ -30,63 +32,52 @@ enum FlightMode {
 } mode = LAUNCH_PAD;
 
 void setup() {
-  if (!SIMULATION){
-    setLEDColor(0, 255, 0); //Green for flight
-    initializeSim();
-  }
-  else
-    setLEDColor(255, 0, 0); //Green for sim replay
+  
 
 
   //Initialize hardware
   initializeLog(); //If sim, this opens the sim file
   initializeLED();
 
-  for(int i = 0; i < 5; i++){
+  if (SIMULATION){
+    setLEDColor(255, 0, 0); //Red for sim
+    initializeSim();
+  }
+  else {
+    setLEDColor(0, 255, 0); //Green for flight
+    
+    //Warning sequence for servo test
+    for(int i = 0; i < 5; i++){
       setTone(5000, 500);
       delay(1000);
     }
-
-  delay(5000);
+    delay(5000);
+  }
 
   initializeServo();
 
   if(!SIMULATION){
-    //Warning tones
-    
     initializeIMU();
-    delay(ALTIMETER_LOCKOUT * 1000);
+
+    setTone(1000, 1000);
+    //delay(ALTIMETER_LOCKOUT * 1000);
     initializeAlt();
+    setTone(1000, 3000);
   }
 
-  
 
   setGreenLED(HIGH); //Signify successful
-  //setServoDeployment(0.05);
 }
 
 void loop() {
   if(SIMULATION)
     updateSim();
   
-  //Update timers
-  if(SIMULATION)
-    timeNewMillis = getSimMillis();
-  else
-    timeNewMillis = millis();
-  dt = (timeNewMillis - timeMillis)/1000.0;
-  timeMillis = timeNewMillis;
-  logLine[0] = String(timeMillis);
-
+  updateTime();
   updateKalmanFilter();
   updateIMU();
-
-  if(SIMULATION)
-    setServoDeployment(getSimServoDeployment());
-  //Serial.println(simServoDeployment());
+  getTemperature();
   
-
-
   //Mange flight states
   switch(mode){
     case LAUNCH_PAD:
@@ -131,10 +122,20 @@ void loop() {
       landMillis = millis();
   }
 
-  if(!SIMULATION)
-    updateSD();
+  updateSD();
+    
 
 
-  Serial.println(getYEstimate());
+  //Serial.println(getYEstimate());
   delay(10);
+}
+
+void updateTime(){
+  if(SIMULATION)
+    timeNewMillis = simLine[0].toInt();
+  else
+    timeNewMillis = millis();
+  dt = (timeNewMillis - timeMillis)/1000.0;
+  timeMillis = timeNewMillis;
+  logLine[0] = String(timeMillis);
 }

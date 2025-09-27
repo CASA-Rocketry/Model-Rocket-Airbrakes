@@ -20,8 +20,8 @@ void initializeLog(){
 
   if (SIMULATION)
     loadSim();
-  else
-    loadFlight();
+
+  loadFlight();
 }
 
 void loadSim(){
@@ -38,7 +38,7 @@ void loadFlight(){
   int flightNumber = 1;
   String fileName;
   do{
-    fileName = "Flight" + String(flightNumber) + ".csv";
+    fileName = String(SIMULATION? "Sim" : "") + "Flight" + String(flightNumber) + ".csv";
     flightNumber++;
   } while(SD.exists(fileName));
   
