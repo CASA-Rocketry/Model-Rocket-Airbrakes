@@ -5,12 +5,17 @@
 #include <String>
 
 #define SD_CS 10
-File flightFile;
+//Logging variables for global scope convinience
+
+String flightName, simName;
+File flightFile, simFile;
 
 void initializeLog(){
+  
+
   if(SERIAL){
     Serial.begin(9600);
-    //while(!Serial);
+    while(!Serial);
   }
 
   if(!SD.begin(SD_CS)){
@@ -20,35 +25,53 @@ void initializeLog(){
 
   if (SIMULATION)
     loadSim();
-
   loadFlight();
+
+//Create headers
+  logLine[TIME_STAMP_LOG] = "time stamp";
+  logLine[RAW_PRESSURE_LOG] = "raw pressure";
+  logLine[RAW_TEMPERATURE_LOG] = "raw temperature";
+  logLine[RAW_AX_LOG] = "raw ax";
+  logLine[RAW_AY_LOG] = "raw ay";
+  logLine[RAW_AZ_LOG] = "raw aZ";
+  logLine[CALCULATED_ALT_LOG] = "calcualted alt";
+  logLine[Y_ESTIMATE_LOG] = "y estimate";
+  logLine[V_ESTIMATE_LOG] = "v estimate";
+  logLine[A_ESTIMATE_LOG] = "a estimate";
+  logLine[APOGEE_ESTIMATE_LOG] = "apogee estimate";
+  logLine[SERVO_DEPLOYMENT_LOG] = "servo deployment";
+  logLine[FLIGHT_MODE_LOG] = "flight mode";
+
+  //add headers to log
+  updateSD();
 }
 
 void loadSim(){
-    flightFile = SD.open("SIM.csv");
+  simName = "SIM.csv";
+  simFile = SD.open(simName);
 
-    if(!flightFile){
+    if(!simFile){
       Serial.println("ERROR opening flight file");
-      enterErrorMode(3);
+      enterErrorMode(5);
   } 
+  //simFile.close();
 }
 
 void loadFlight(){
 //Create flight file
   int flightNumber = 1;
-  String fileName;
   do{
-    fileName = String(SIMULATION? "Sim" : "") + "Flight" + String(flightNumber) + ".csv";
+    flightName = String((SIMULATION)? "s" : "") + "Flight" + String(flightNumber) + ".csv";
+    Serial.println(flightName);
     flightNumber++;
-  } while(SD.exists(fileName));
+  } while(SD.exists(flightName));
   
-
-  flightFile = SD.open(fileName, FILE_WRITE);
+  flightFile = SD.open(flightName, FILE_WRITE);
   if(!flightFile){
     Serial.println("ERROR opening flight file");
-    enterErrorMode(3);
+    enterErrorMode(1);
   }
-  Serial.println("Successfully logging to " + fileName);
+  Serial.println("Successfully logging to " + flightName);
   updateSD();
 }
 

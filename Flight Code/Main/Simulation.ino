@@ -2,15 +2,19 @@
 
 void initializeSim(){
   getNewLine(); //Clear header titles 
-  getNewLine(); //Load first line
+  //getNewLine(); //Load first line
 }
 
 void updateSim(){
+  //flightFile.close();
+  //flightFile = SD.open(simName, FILE_READ);
   getNewLine();
+  //flightFile.close();
+  //flightFile = SD.open(flightName, FILE_WRITE);
 }
 
 void getNewLine () {
-  if (!flightFile.available())
+  if (!simFile.available())
     return; //end if no new data
 
   //Serial.println("NEW LINE");
@@ -24,12 +28,12 @@ void getNewLine () {
 
   for(int i = 0; i < ITEMS_LOGGED; i++){ 
     entry = "";
-    while(flightFile.available()){
-      byte = flightFile.read();
+    while(simFile.available()){
+      byte = simFile.read();
       //if(byte == '\n') continue;
       if(byte == ',' || byte == '\n'){
         simLine[i] = entry;
-        //Serial.println(entry);
+        Serial.println(entry);
         break;
       } else
         entry += byte;

@@ -26,11 +26,6 @@ void initializeIMU(){
   }
 }
 
-void updateAcceleration(){
-  
-
-}
-
 //Assumes rocket is in vertical flight
 float getVerticalAcceleration(){
   return 9.8 * (az - 1.0);

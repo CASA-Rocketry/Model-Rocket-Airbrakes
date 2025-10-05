@@ -26,7 +26,11 @@ double getPressure() {
 }
 
 double getTemperature() {
-  double temperature = BARO.readTemperature();
+  double temperature;
+  if(SIMULATION)
+    temperature = simLine[RAW_TEMPERATURE_LOG].toFloat();
+  else
+    temperature = BARO.readTemperature();
   logLine[2] = String(temperature);
   return temperature;
 }
@@ -37,10 +41,11 @@ float getRawAlt() {
 
 
 float getCalibratedAlt() {
+  float calibratedAlt;
   if (SIMULATION)
-    return simLine[6].toFloat();
-
-  float calibratedAlt = getRawAlt() + offset;
+    calibratedAlt = simLine[6].toFloat();
+  else
+    calibratedAlt = getRawAlt() + offset;
   logLine[6] = String(calibratedAlt);
 
   return calibratedAlt;

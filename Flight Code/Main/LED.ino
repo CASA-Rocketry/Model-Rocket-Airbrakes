@@ -43,7 +43,7 @@ void enterErrorMode(int code){
 void setError(int level){
   setRedLED(level);
   if(level == 1){
-    tone(BUZZER, 300);
+    //tone(BUZZER, 300);
   } else
     noTone(BUZZER);
 }
