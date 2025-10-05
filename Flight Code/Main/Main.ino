@@ -81,7 +81,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("new loop");
   if(SIMULATION)
     updateSim();
 
@@ -89,8 +88,8 @@ void loop() {
   updateKalmanFilter();
   updateIMU();
   getTemperature();
-  Serial.println(getCalibratedAlt());
   
+  runApogeeControl();
   //Mange flight states
   switch(mode){
     case LAUNCH_PAD:

@@ -1,11 +1,26 @@
+#include <cmath>
+
+#define BURNOUT_MASS 0.557
+#define GRAVITY 9.81
+#define ROCKET_AREA 0.2463
+#define AIR_DENSITY 1.2
+
 //Uses the current servo deployment to calculate the new drag coefficient
 float getDragCoefficient(){
-  return 0;//TODO: determine these constants or use a more sophisticated model. 
+  return 0.8 + getServoDeployment() * 0.5;
 }
 
 //Returns estimated apogee in meters
 float getApogeeEstimate(){
-  float apogeeEstimate = 0; //Insert math here
+  float apogeeEstimate;
+  float k = 0.5 * getDragCoefficient() * ROCKET_AREA * AIR_DENSITY;
+  float logArg = (k * getVEstimate() * getVEstimate()) / (BURNOUT_MASS * GRAVITY) + 1;
+  if(logArg <= 0)
+    apogeeEstimate = getYEstimate();
+  else{
+    float deltaY = (BURNOUT_MASS/(2*k)) * std::log(logArg);
+    apogeeEstimate =  getYEstimate() + deltaY;//Insert math here
+  }
   logLine[10] = String(apogeeEstimate);
   return apogeeEstimate;
 }

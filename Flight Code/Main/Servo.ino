@@ -10,6 +10,7 @@
 
 
 Servo servo;
+double currentDeployment = 0;
 
 
 void initializeServo(){
@@ -32,11 +33,16 @@ void initializeServo(){
 
 //Deployment ranges from 0 to 1
 void setServoDeployment(float deployment){
-  logLine[11] = String(deployment);
   double clampedDeployment = clamp(deployment, 0, 1); //May remove if this is verified earlier
+  currentDeployment = clampedDeployment;
+  logLine[11] = String(currentDeployment);
   double angle = MIN_DEPLOYMENT_DEGREES + (MAX_DEPLOYMENT_DEGREES - MIN_DEPLOYMENT_DEGREES) * clampedDeployment;
   
   servo.write(angle);
+}
+
+float getServoDeployment(){
+  return currentDeployment;
 }
 
 

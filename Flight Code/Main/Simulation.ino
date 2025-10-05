@@ -33,7 +33,6 @@ void getNewLine () {
       //if(byte == '\n') continue;
       if(byte == ',' || byte == '\n'){
         simLine[i] = entry;
-        Serial.println(entry);
         break;
       } else
         entry += byte;
