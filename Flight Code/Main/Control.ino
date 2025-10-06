@@ -4,7 +4,8 @@
 
 void runApogeeControl(){
   float error = getApogeeEstimate() - TARGET_APOGEE;
-  setServoDeployment(error * KP);
+  //setServoDeployment(error * KP);
+  setServoDeployment(1);
 }
 
 

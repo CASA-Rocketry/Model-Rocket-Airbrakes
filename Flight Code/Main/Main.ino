@@ -1,6 +1,7 @@
 #define SERIAL true //false during flight
-#define SIMULATION true //false on real flight
-#define BUZZER false
+#define SIMULATION false //false on real flight
+#define BUZZER true
+#define SERVO true
 
 //Shared pin definitions
 #define SCK 13
@@ -71,7 +72,7 @@ void setup() {
     initializeIMU();
 
     setTone(1000, 1000);
-    //delay(ALTIMETER_LOCKOUT * 1000);
+    delay(ALTIMETER_LOCKOUT * 1000);
     initializeAlt();
     setTone(1000, 3000);
   }
