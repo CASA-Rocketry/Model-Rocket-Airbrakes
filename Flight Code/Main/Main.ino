@@ -136,7 +136,7 @@ void loop() {
   }
   logLine[FLIGHT_MODE_LOG] = String(mode);
   updateSD();
-  delay(10);
+  // delay(10);
 }
 
 void updateTime(){
