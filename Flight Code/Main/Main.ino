@@ -90,7 +90,7 @@ void loop() {
   updateIMU();
   getTemperature();
   
-  runApogeeControl();
+  //runApogeeControl();
   //Mange flight states
   switch(mode){
     case LAUNCH_PAD:

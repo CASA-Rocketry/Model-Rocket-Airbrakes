@@ -1,6 +1,6 @@
 #include <cmath>
 
-#define BURNOUT_MASS 0.557
+#define BURNOUT_MASS 0.617
 #define GRAVITY 9.81
 #define ROCKET_AREA 0.2463
 #define AIR_DENSITY 1.2
