@@ -27,10 +27,11 @@ String logLine[ITEMS_LOGGED] = {};
 String simLine[ITEMS_LOGGED] = {};
 
 #define BURN_TIME 1.5
-#define ALTIMETER_LOCKOUT 60 //altimeter delay (seconds)
+#define ALTIMETER_LOCKOUT 3 //altimeter delay (seconds)
 
 unsigned long timeMillis = 0, timeNewMillis;
 unsigned long launchMillis, landMillis;
+unsigned long processMicros;
 float dt;
 
 enum FlightMode {
@@ -43,9 +44,6 @@ enum FlightMode {
 } mode = LAUNCH_PAD;
 
 void setup() {
-  
-
-
   //Initialize hardware
   initializeLog(); //If sim, this opens the sim file
   initializeLED();
@@ -58,11 +56,11 @@ void setup() {
     setLEDColor(0, 255, 0); //Green for flight
     
     //Warning sequence for servo test
-    for(int i = 0; i < 5; i++){
-      setTone(5000, 500);
-      delay(1000);
-    }
-    delay(5000);
+    // for(int i = 0; i < 5; i++){
+    //   setTone(5000, 500);
+    //   delay(1000);
+    // }
+    // delay(2000);
   }
 
   
@@ -71,8 +69,8 @@ void setup() {
     initializeServo();
     initializeIMU();
 
-    setTone(1000, 1000);
-    delay(ALTIMETER_LOCKOUT * 1000);
+    //setTone(1000, 1000);
+    //delay(ALTIMETER_LOCKOUT * 1000);
     initializeAlt();
     setTone(1000, 3000);
   }
@@ -86,9 +84,18 @@ void loop() {
     updateSim();
 
   updateTime();
+
+  beginProcess();
   updateKalmanFilter();
+  endProcess("Kalman filter");
+
+  beginProcess();
   updateIMU();
+  endProcess("IMU data grab");
+
+  beginProcess();
   getTemperature();
+  endProcess("Tempterature data grab");
   
   //runApogeeControl();
   //Mange flight states
@@ -134,9 +141,20 @@ void loop() {
       //setLEDColor(247, 0, 255); //Purple
       landMillis = millis();
   }
+  
   logLine[FLIGHT_MODE_LOG] = String(mode);
   updateSD();
-  // delay(10);
+
+  //Blank space for each iteration
+  Serial.print("\n\n\n"); 
+
+  //Plotting data for sim
+  // serialTag("Y Estimate", getYEstimate());
+  // serialTag("Apogee Estimate", getApogeeEstimate());
+  // serialTag("Servo deployment", getServoDeployment() * 10);
+  // serialTag("Acceleration z:", getVerticalAcceleration());
+  // Serial.println();
+  //delay(10);
 }
 
 void updateTime(){
@@ -147,4 +165,15 @@ void updateTime(){
   dt = (timeNewMillis - timeMillis)/1000.0;
   timeMillis = timeNewMillis;
   logLine[0] = String(timeMillis);
+}
+
+//Resets timer for new process timing
+void beginProcess(){
+  processMicros = micros();
+}
+
+//Prints out process time
+void endProcess(String processName){
+  unsigned long durationMicro = micros() - processMicros;
+  Serial.println(processName + ": " + durationMicro + " us");
 }

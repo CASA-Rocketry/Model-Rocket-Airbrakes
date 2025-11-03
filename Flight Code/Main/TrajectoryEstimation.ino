@@ -11,16 +11,27 @@ float getDragCoefficient(){
 }
 
 //Returns estimated apogee in meters
+// float getApogeeEstimate(){
+//   float apogeeEstimate;
+//   float k = 0.5 * getDragCoefficient() * ROCKET_AREA * AIR_DENSITY;
+//   float logArg = (k * getVEstimate() * getVEstimate()) / (BURNOUT_MASS * GRAVITY) + 1;
+//   if(logArg <= 0)
+//     apogeeEstimate = getYEstimate();
+//   else{
+//     float deltaY = (BURNOUT_MASS/(2*k)) * std::log(logArg);
+//     apogeeEstimate =  getYEstimate() + deltaY;//Insert math here
+//   }
+//   apoggeeEstiamte = getYEstimate()
+//   logLine[10] = String(apogeeEstimate);
+//   return apogeeEstimate;
+// }
+
 float getApogeeEstimate(){
   float apogeeEstimate;
   float k = 0.5 * getDragCoefficient() * ROCKET_AREA * AIR_DENSITY;
-  float logArg = (k * getVEstimate() * getVEstimate()) / (BURNOUT_MASS * GRAVITY) + 1;
-  if(logArg <= 0)
-    apogeeEstimate = getYEstimate();
-  else{
-    float deltaY = (BURNOUT_MASS/(2*k)) * std::log(logArg);
-    apogeeEstimate =  getYEstimate() + deltaY;//Insert math here
-  }
+
+  float deltaY = (0.5 * BURNOUT_MASS * getVEstimate() * getVEstimate()) / (BURNOUT_MASS * GRAVITY + k * getVEstimate() * getVEstimate());
+  apogeeEstimate = getYEstimate() + deltaY;
   logLine[10] = String(apogeeEstimate);
   return apogeeEstimate;
 }
