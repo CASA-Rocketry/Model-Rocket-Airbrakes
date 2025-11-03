@@ -80,10 +80,20 @@ void endLog(){
 }
 
 void updateSD(){
+  beginProcess();
+  String line = "";
   for(int i = 0; i < ITEMS_LOGGED; i++){
-    flightFile.print(logLine[i] + ((i == ITEMS_LOGGED - 1) ? '\n' : ','));
+    line += logLine[i] + ',';
   }
+  endProcess("String creation");
+
+  beginProcess();
+  flightFile.print(line + '\n');
+  endProcess("SD card write");
+
+  beginProcess();
   flightFile.flush(); //Save new data to SD card
+  endProcess("Flush SD");
 }
 
 

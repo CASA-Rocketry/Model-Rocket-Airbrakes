@@ -36,7 +36,12 @@ double getTemperature() {
 }
 
 float getRawAlt() {
-  return 44330.0 * (1 - pow(getPressure() / SEALEVEL_PRESSURE_KPA, 1 / 5.255));  //TODO: update with temperature information
+  beginProcess();
+  double pressure = getPressure();
+  endProcess("Pressure grab");
+
+  beginProcess();
+  return 44330.0 * (1 - pow(pressure / SEALEVEL_PRESSURE_KPA, 1 / 5.255));  //TODO: update with temperature information
 }
 
 

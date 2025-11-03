@@ -84,10 +84,7 @@ void loop() {
     updateSim();
 
   updateTime();
-
-  beginProcess();
   updateKalmanFilter();
-  endProcess("Kalman filter");
 
   beginProcess();
   updateIMU();
