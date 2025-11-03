@@ -25,41 +25,41 @@ BLA::Matrix <3> K; //Kalman gain
 void updateKalmanFilter(){
   //Add data
   z(0) = getCalibratedAlt();
-  endProcess("Altitude calculation");
+  //endProcess("Altitude calculation");
 
-  beginProcess();
+  //beginProcess();
   phi = {1, dt, 0.5 * dt * dt,
          0, 1, dt,
          0, 0, 1};
-  endProcess("Kalman - phi creation");
+  //endProcess("Kalman - phi creation");
 
   //Update Kalman Gain
-  beginProcess();
+  //beginProcess();
   K = P * ~H * Inverse((H * P * ~H + R));
-  endProcess("Kalman - update gain");
+  //endProcess("Kalman - update gain");
 
   //Update Estimate
-  beginProcess();
+  //beginProcess();
   x = x + K * (z - H * x);
-  endProcess("Kalman - update estimate");
+  //endProcess("Kalman - update estimate");
 
   //Update Covariance
-  beginProcess();
+  //beginProcess();
   P = (I - K * H) * P;
-  endProcess("Kalman - update covariance");
+  //endProcess("Kalman - update covariance");
 
   //Project to next time stamp
-  beginProcess();
+  //beginProcess();
   x = phi * x;
   P = phi * P * ~phi + Q;
-  endProcess("Kalman - project");
+  //endProcess("Kalman - project");
 
   //Update log
-  beginProcess();
+  //beginProcess();
   logLine[7] = String(x(0));
   logLine[8] = String(x(1));
   logLine[9] = String(x(2));
-  endProcess("Kalman - log");
+  //endProcess("Kalman - log");
 }
 
 float getYEstimate(){

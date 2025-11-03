@@ -80,19 +80,21 @@ void setup() {
 }
 
 void loop() {
+  beginProcess();
+
   if(SIMULATION)
     updateSim();
 
   updateTime();
   updateKalmanFilter();
 
-  beginProcess();
+  //beginProcess();
   updateIMU();
-  endProcess("IMU data grab");
+  //endProcess("IMU data grab");
 
-  beginProcess();
+  //beginProcess();
   getTemperature();
-  endProcess("Tempterature data grab");
+  //endProcess("Tempterature data grab");
   
   //runApogeeControl();
   //Mange flight states
@@ -140,10 +142,12 @@ void loop() {
   }
   
   logLine[FLIGHT_MODE_LOG] = String(mode);
+  //beginProcess();
   updateSD();
+  //endProcess("SD Log update");
 
   //Blank space for each iteration
-  Serial.print("\n\n\n"); 
+  //Serial.print("\n\n\n"); 
 
   //Plotting data for sim
   // serialTag("Y Estimate", getYEstimate());
@@ -152,6 +156,7 @@ void loop() {
   // serialTag("Acceleration z:", getVerticalAcceleration());
   // Serial.println();
   //delay(10);
+  endProcess("Loop iteration");
 }
 
 void updateTime(){
