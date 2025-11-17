@@ -1,0 +1,2 @@
+const float SEA_LEVEL_PRESSURE = 1013.25; //hPa
+const int CALIBRATION_POINTS = 100;
