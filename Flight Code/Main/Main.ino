@@ -32,6 +32,7 @@ String simLine[ITEMS_LOGGED] = {};
 unsigned long timeMillis = 0, timeNewMillis;
 unsigned long launchMillis, landMillis;
 unsigned long processMicros;
+int loopCount = 0;
 float dt;
 
 enum FlightMode {
@@ -80,8 +81,7 @@ void setup() {
 }
 
 void loop() {
-  beginProcess();
-
+  
   if(SIMULATION)
     updateSim();
 
@@ -156,7 +156,13 @@ void loop() {
   // serialTag("Acceleration z:", getVerticalAcceleration());
   // Serial.println();
   //delay(10);
-  endProcess("Loop iteration");
+
+  //Update loop every 200 iterations
+  if(loopCount % 200 == 0){
+    endProcess("Loop iteration");
+    beginProcess();
+  }
+  loopCount++;
 }
 
 void updateTime(){

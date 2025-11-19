@@ -24,6 +24,7 @@ void initializeIMU(){
     Serial.println("ERROR Initializing IMU");
     enterErrorMode(4);
   }
+  IMU.setContinuousMode();
 }
 
 //Assumes rocket is in vertical flight

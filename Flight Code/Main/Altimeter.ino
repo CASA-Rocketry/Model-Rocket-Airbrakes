@@ -16,6 +16,8 @@ void initializeAlt() {
     enterErrorMode(1);
   }
 
+  //BARO.setOutputRate(RATE_50_HZ);
+
   calibrateAlt();
 }
 
