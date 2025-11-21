@@ -97,7 +97,7 @@ void BoschSensorClass::oneShotMode() {
 }
 
 // default range is +-4G, so conversion factor is (((1 << 15)/4.0f))
-#define INT16_to_G   (8192.0f)
+#define INT16_to_G   (2048.0f)
 
 // Accelerometer
 int BoschSensorClass::readAcceleration(float& x, float& y, float& z) {
@@ -225,7 +225,7 @@ int8_t BoschSensorClass::configure_sensor(struct bmi2_dev *dev)
   sens_cfg[0].cfg.acc.bwp = BMI2_ACC_OSR2_AVG2;
   sens_cfg[0].cfg.acc.odr = BMI2_ACC_ODR_100HZ;
   sens_cfg[0].cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
-  sens_cfg[0].cfg.acc.range = BMI2_ACC_RANGE_4G;
+  sens_cfg[0].cfg.acc.range = BMI2_ACC_RANGE_16G;
   sens_cfg[1].type = BMI2_GYRO;
   sens_cfg[1].cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
   sens_cfg[1].cfg.gyr.bwp = BMI2_GYR_OSR2_MODE;
