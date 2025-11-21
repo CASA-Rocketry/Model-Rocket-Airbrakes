@@ -23,8 +23,10 @@ void initializeLog(){
     enterErrorMode(2);
   }
 
-  if (SIMULATION)
+  #if SIMULATION
     loadSim();
+  #endif
+  
   loadFlight();
 
 //Create headers

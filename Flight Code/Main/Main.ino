@@ -31,7 +31,7 @@ String simLine[ITEMS_LOGGED] = {};
 
 unsigned long timeMillis = 0, timeNewMillis;
 unsigned long launchMillis, landMillis;
-unsigned long processMicros;
+unsigned long processMicros = 0;
 int loopCount = 0;
 float dt;
 
@@ -88,13 +88,11 @@ void loop() {
   updateTime();
   updateKalmanFilter();
 
-  //beginProcess();
-  updateIMU();
-  //endProcess("IMU data grab");
 
-  //beginProcess();
+  updateIMU();
+
+
   getTemperature();
-  //endProcess("Tempterature data grab");
   
   //runApogeeControl();
   //Mange flight states
@@ -142,9 +140,8 @@ void loop() {
   }
   
   logLine[FLIGHT_MODE_LOG] = String(mode);
-  //beginProcess();
   updateSD();
-  //endProcess("SD Log update");
+
 
   //Blank space for each iteration
   //Serial.print("\n\n\n"); 
@@ -158,18 +155,18 @@ void loop() {
   //delay(10);
 
   //Update loop every 200 iterations
-  if(loopCount % 200 == 0){
-    endProcess("Loop iteration");
+  if(loopCount++ % 200 == 0){
+    endProcess("200 loop iteration");
     beginProcess();
   }
-  loopCount++;
 }
 
 void updateTime(){
-  if(SIMULATION)
+  #if SIMULATION
     timeNewMillis = simLine[0].toInt();
-  else
+  #else
     timeNewMillis = millis();
+  #endif
   dt = (timeNewMillis - timeMillis)/1000.0;
   timeMillis = timeNewMillis;
   logLine[0] = String(timeMillis);

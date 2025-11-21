@@ -1,4 +1,4 @@
-#include <Arduino_LPS22HB.h>
+#include "src/Libraries/Arduino_LPS22HB/Arduino_LPS22HB.h"
 
 //Parameter constnats
 #define SEALEVEL_PRESSURE_KPA 101.325
@@ -16,7 +16,7 @@ void initializeAlt() {
     enterErrorMode(1);
   }
 
-  //BARO.setOutputRate(RATE_50_HZ);
+  BARO.setOutputRate(RATE_75_HZ);
 
   calibrateAlt();
 }

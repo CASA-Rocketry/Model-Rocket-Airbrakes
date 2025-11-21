@@ -39,6 +39,7 @@ void setServoDeployment(float deployment){
   double clampedDeployment = clamp(deployment, 0, 1); //May remove if this is verified earlier
   currentDeployment = clampedDeployment;
   logLine[11] = String(currentDeployment);
+  
   if(!SERVO) return;
   double angle = MIN_DEPLOYMENT_DEGREES + (MAX_DEPLOYMENT_DEGREES - MIN_DEPLOYMENT_DEGREES) * clampedDeployment;
   
