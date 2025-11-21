@@ -15,6 +15,16 @@ double currentDeployment = 0;
 
 void initializeServo(){
   servo.attach(PWM1);
+}
+
+void testServo(){
+
+  //Warning sequence for servo test
+    for(int i = 0; i < 5; i++){
+      setTone(5000, 500);
+      delay(1000);
+    }
+    delay(2000);
 
   //Slow pass
   for(double a = 0; a <= PI; a += PI/100){

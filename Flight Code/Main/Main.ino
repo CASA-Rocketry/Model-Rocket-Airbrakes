@@ -7,6 +7,7 @@
 #define SCK 13
 #define MISO 12
 #define MOSI 11
+#define BUTTON 7
 
 #define ITEMS_LOGGED 13
 #define TIME_STAMP_LOG 0
@@ -48,50 +49,41 @@ void setup() {
   //Initialize hardware
   initializeLog(); //If sim, this opens the sim file
   initializeLED();
+  pinMode(BUTTON, INPUT);
 
-  if (SIMULATION){
+  #if SIMULATION
     setLEDColor(255, 0, 0); //Red for sim
     initializeSim();
-  }
-  else {
+  #else
     setLEDColor(0, 255, 0); //Green for flight
-    
-    //Warning sequence for servo test
-    // for(int i = 0; i < 5; i++){
-    //   setTone(5000, 500);
-    //   delay(1000);
-    // }
-    // delay(2000);
-  }
-
-  
-
-  if(!SIMULATION){
     initializeServo();
     initializeIMU();
-
-    //setTone(1000, 1000);
-    //delay(ALTIMETER_LOCKOUT * 1000);
     initializeAlt();
-    setTone(1000, 3000);
-  }
 
+    //Only do servo test and long delay if button isn't pressed
+    if(digitalRead(BUTTON) == LOW){
+      testServo();
+      setTone(1000, 1000);
+      delay(ALTIMETER_LOCKOUT * 1000);
+    }
+    
+    calibrateAlt();
+  #endif
 
-  setGreenLED(HIGH); //Signify successful
+  //Successful calibration
+  setTone(1000, 3000);
+  setGreenLED(HIGH);
 }
 
 void loop() {
   
-  if(SIMULATION)
+  #if SIMULATION
     updateSim();
+  #endif
 
   updateTime();
   updateKalmanFilter();
-
-
   updateIMU();
-
-
   getTemperature();
   
   //runApogeeControl();
@@ -142,23 +134,7 @@ void loop() {
   logLine[FLIGHT_MODE_LOG] = String(mode);
   updateSD();
 
-
-  //Blank space for each iteration
-  //Serial.print("\n\n\n"); 
-
-  //Plotting data for sim
-  // serialTag("Y Estimate", getYEstimate());
-  // serialTag("Apogee Estimate", getApogeeEstimate());
-  // serialTag("Servo deployment", getServoDeployment() * 10);
-  // serialTag("Acceleration z:", getVerticalAcceleration());
-  // Serial.println();
-  //delay(10);
-
-  //Update loop every 200 iterations
-  if(loopCount++ % 200 == 0){
-    endProcess("200 loop iteration");
-    beginProcess();
-  }
+  timeLoop();
 }
 
 void updateTime(){
@@ -181,4 +157,12 @@ void beginProcess(){
 void endProcess(String processName){
   unsigned long durationMicro = micros() - processMicros;
   Serial.println(processName + ": " + durationMicro + " us");
+}
+
+//Update loop time every 1000 iterations
+void timeLoop(){
+  if(loopCount++ % 1000 == 0){
+    endProcess("1000 loop iterations");
+    beginProcess();
+  }
 }
