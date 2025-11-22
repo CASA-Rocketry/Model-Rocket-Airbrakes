@@ -1,33 +1,33 @@
 #include "Altimeter.h"
 #include "Constants.cpp"
+#include "globalSettings.h"
 
 
 void PhysicalAltimeter::initialize(){
-    if(!bmp.begin_I2C())
-        Serial.println("ERROR initializing Altimeter");
-    else 
+    if(!bmp.begin_I2C()){
+        Serial.println("ERROR initializing Altimeter"); 
+    } else {
+        bmp.setOutputDataRate(BMP3_ODR_200_HZ); 
         calibrate();
+    }
 }
 
 //Updates temp and pressure data simulteneously 
-//NOT USED as readAltitude and readTemperature redudantly grab the data right now
 void PhysicalAltimeter::readValues(){
-    bmp.performReading();
+    altitude = bmp.readAltitude(SEA_LEVEL_PRESSURE) - altitudeOffset;
+    temperature = bmp.temperature;
 }
 
 void PhysicalAltimeter::calibrate(){
     double sum = 0;
+    altitudeOffset = 0; //get raw alt values
+
     for(int i = 0; i < CALIBRATION_POINTS; i++){
-        sum += bmp.readAltitude(SEA_LEVEL_PRESSURE);
-        delay(20);
+        readValues();
+        sum += altitude;
+        delay(CALIBRATION_DELAY);
     }
     altitudeOffset = sum / CALIBRATION_POINTS;
-}
-
-double PhysicalAltimeter::getCalibratedAltitude(){
-    return bmp.readAltitude(SEA_LEVEL_PRESSURE) - altitudeOffset;
-}
-
-double PhysicalAltimeter::getTemperature(){
-    return bmp.readTemperature();
+    sPrint("Calibration point: ");
+    sPrintln(altitudeOffset);
 }

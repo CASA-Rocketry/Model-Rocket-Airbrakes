@@ -2,27 +2,27 @@
 
 //Abstract class to access physical and simulated altimeters
 class Altimeter {
+protected:
+    double altitude, temperature;
 public:
-    virtual double getCalibratedAltitude() = 0;
-    virtual double getTemperature() = 0;
-    virtual void readValues() = 0;
+    double getAltitude() {return altitude;}
+    double getTemperature() {return temperature;}
+    virtual void readValues();
+    virtual void initialize();
 };
 
 class PhysicalAltimeter : public Altimeter {
 private:
     Adafruit_BMP3XX bmp;
     double altitudeOffset;
-    void calibrate();
 public:
-    void readValues();
-    void initialize();
-    double getTemperature();
-    double getCalibratedAltitude();
+    void calibrate();
+    void readValues() override;
+    void initialize() override;
 };
 
 class SimAltimeter : public Altimeter {
 public:
-    void readValues();
-    double getTemperature();
-    double getCalibratedAltitude();
+    void readValues() override {}
+    void initialize() override {}
 };
