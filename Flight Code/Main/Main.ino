@@ -1,7 +1,7 @@
 #define SIMULATION false //false on real flight
 #define BUZZER true
 #define SERVO true
-#define SERIAL false//false during flight
+#define SERIAL false//true//false during flight
 
 //Remove print statements pre-compilation if SERIAL is false
 #if SERIAL
@@ -73,7 +73,13 @@ void setup() {
     if(digitalRead(BUTTON) == LOW){
       testServo();
       setTone(1000, 1000);
-      delay(ALTIMETER_LOCKOUT * 1000);
+      for(int i = 0; i < ALTIMETER_LOCKOUT; i++){
+        setTone(3000, 250);
+        delay(500);
+        setTone(1000, 250);
+        delay(500);
+     // delay(ALTIMETER_LOCKOUT * 1000);
+      }
     }
     
     calibrateAlt();
@@ -96,57 +102,53 @@ void loop() {
   updateIMU();
   getTemperature();
   
-  //runApogeeControl();
-  //Mange flight states
+  //Manage flight states
   switch(mode){
     case LAUNCH_PAD:
-      //setLEDColor(255, 0, 0); //RED
-      //Serial.println(getVerticalAcceleration());
       if (getVerticalAcceleration() > 20){
         mode = THRUST;
         launchMillis = timeMillis;
-      }
-      else
+      } else
         break;
     case THRUST:
-      //setLEDColor(240, 122, 5); //Orange
-      //Serial.println((timeMillis - launchMillis)/1000.0);
-      if((timeMillis - launchMillis)/1000.0 > BURN_TIME) //Care that these are UNSIGNED longs
+      if((timeMillis - launchMillis)/1000.0 > BURN_TIME)
         mode = COAST;
       else
         break;
     case COAST:
-      //setLEDColor(255, 247, 0); //Yellow
       runApogeeControl();
-      if (getVEstimate() < 0)
-        mode = RECOVERY;
-      else
-        break;
-    case RECOVERY:
-      //setLEDColor(0, 255, 0); //Green
-      runTimeControl();
-      if(getYEstimate() < 5)
+    //   if (getVEstimate() < 0)
+    //     mode = RECOVERY;
+    //   else
+    //     break;
+    // case RECOVERY:
+    //   runTimeControl();
+      if(getYEstimate() < 10)
         mode = LANDING;
       else 
         break;
     case LANDING:
-      //setLEDColor(0, 0, 255); //Blue
       setServoDeployment(0);
       if(abs(getVEstimate()) < 0.2)
         mode = LANDED;
       else
         break;
     case LANDED:
-      //setLEDColor(247, 0, 255); //Purple
       landMillis = millis();
   }
   
   logLine[FLIGHT_MODE_LOG] = String(mode);
   updateSD();
 
-  #if SERIAL
-    timeLoop();
-  #endif
+  // #if SERIAL
+  //   timeLoop();
+  // #endif
+
+  if(loopCount++ % 10 == 0){
+    flushFlightFile();
+    // endProcess("1000 loop iterations");
+    // beginProcess();
+  }
 }
 
 void updateTime(){

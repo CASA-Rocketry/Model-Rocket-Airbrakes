@@ -50,20 +50,21 @@ void loadSim(){
   simName = "SIM.csv";
   simFile = SD.open("SIM.csv");
 
-    if(!simFile){
+  if(!simFile){
       enterErrorMode("ERROR opening sim file", 5);
   } 
 }
 
 void loadFlight(){
-//Create flight file
+  //Create flight file
   int flightNumber = 1;
   do{
     #if SIMULATION
-      flightName = "simFlight" + String(flightNumber) + ".csv";
+      flightName = "sFlight" + String(flightNumber) + ".csv";
     #else
       flightName = "Flight" + String(flightNumber) + ".csv";
     #endif
+    sPrintln(flightName);
     flightNumber++;
   } while(SD.exists(flightName));
   
@@ -73,6 +74,10 @@ void loadFlight(){
   }
   sPrintln("Successfully logging to " + flightName);
   updateSD();
+
+  //Clear log line
+  for(int i = 0; i < ITEMS_LOGGED; i++)
+    logLine[i] = "";
 }
 
 void endLog(){
@@ -86,9 +91,13 @@ void updateSD(){
   flightFile.print('\n');
 }
 
+void flushFlightFile(){
+  flightFile.flush();
+}
+
 
 void serialTag(String name, float value){
-  Serial.print(name + ':');
-  Serial.print(value);
-  Serial.print(", ");
+  sPrint(name + ':');
+  sPrint(value);
+  sPrint(", ");
 }

@@ -54,7 +54,7 @@ void setServoDeployment(float deployment){
   if(!SERVO) return;
   double angle = MIN_DEPLOYMENT_DEGREES + (MAX_DEPLOYMENT_DEGREES - MIN_DEPLOYMENT_DEGREES) * clampedDeployment;
   
-  servo.write(angle);
+  servo.write(0);//angle);
 }
 
 float getServoDeployment(){
