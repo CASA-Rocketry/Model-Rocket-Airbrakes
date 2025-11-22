@@ -1,8 +1,6 @@
 #include "src/Libraries/Arduino_BMI270_BMM150/Arduino_BMI270_BMM150.h"
 float gx, gy, gz, ax, ay, az, mx, my, mz;
 
-
-
 void updateIMU(){
   #if SIMULATION
     ax = simLine[3].toFloat();
@@ -22,10 +20,11 @@ void updateIMU(){
 
 void initializeIMU(){
   if(!IMU.begin()){
-    Serial.println("ERROR Initializing IMU");
-    enterErrorMode(4);
+    enterErrorMode("ERROR Iintializeing IMU", 4);
   }
   IMU.setContinuousMode();
+
+  sPrintln("Initialized IMU");
 }
 
 //Assumes rocket is in vertical flight

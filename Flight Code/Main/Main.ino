@@ -1,7 +1,16 @@
-#define SERIAL true //false during flight
 #define SIMULATION false //false on real flight
 #define BUZZER true
 #define SERVO true
+#define SERIAL false//false during flight
+
+//Remove print statements pre-compilation if SERIAL is false
+#if SERIAL
+  #define sPrint(a) Serial.print(a)
+  #define sPrintln(a) Serial.println(a)
+#else
+  #define sPrint(a) 
+  #define sPrintln(a)
+#endif
 
 //Shared pin definitions
 #define SCK 13
@@ -28,7 +37,7 @@ String logLine[ITEMS_LOGGED] = {};
 String simLine[ITEMS_LOGGED] = {};
 
 #define BURN_TIME 1.5
-#define ALTIMETER_LOCKOUT 3 //altimeter delay (seconds)
+#define ALTIMETER_LOCKOUT 60 //altimeter delay (seconds)
 
 unsigned long timeMillis = 0, timeNewMillis;
 unsigned long launchMillis, landMillis;
@@ -71,6 +80,7 @@ void setup() {
   #endif
 
   //Successful calibration
+  sPrintln("Successful calibration");
   setTone(1000, 3000);
   setGreenLED(HIGH);
 }
@@ -134,7 +144,9 @@ void loop() {
   logLine[FLIGHT_MODE_LOG] = String(mode);
   updateSD();
 
-  timeLoop();
+  #if SERIAL
+    timeLoop();
+  #endif
 }
 
 void updateTime(){
@@ -156,7 +168,7 @@ void beginProcess(){
 //Prints out process time
 void endProcess(String processName){
   unsigned long durationMicro = micros() - processMicros;
-  Serial.println(processName + ": " + durationMicro + " us");
+  sPrintln(processName + ": " + durationMicro + " us");
 }
 
 //Update loop time every 1000 iterations

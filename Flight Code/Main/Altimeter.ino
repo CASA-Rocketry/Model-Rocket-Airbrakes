@@ -11,11 +11,11 @@ float offset;
 
 void initializeAlt() {
   if (!BARO.begin()) {
-    Serial.println("ERROR Initilizing Altimeter");
-    enterErrorMode(1);
+    enterErrorMode("ERROR Initialize Altimeter", 1);
   }
-
   BARO.setOutputRate(RATE_75_HZ);
+
+  sPrintln("Altimeter initialized");
 }
 
 double getPressure() {
@@ -46,6 +46,8 @@ float getCalibratedAlt() {
 }
 
 void calibrateAlt() {
+  sPrintln("Starting altimeter calibration");
+
   float sum = 0;
   for (int i = 0; i < CALIBRATION_SAMPLE_SIZE; i++) {
     sum += BARO.readAltitude();
@@ -62,7 +64,6 @@ void calibrateAlt() {
   float average = sum / CALIBRATION_SAMPLE_SIZE;
   offset = CALIBRATION_POINT - average;
 
-  
-  Serial.print("Calibration complete! ... Average: ");
-  Serial.println(average);
+  sPrint("Calibration complete! ... Average: ");
+  sPrintln(average);
 }

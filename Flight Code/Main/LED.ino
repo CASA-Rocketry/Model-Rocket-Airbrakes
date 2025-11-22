@@ -1,3 +1,5 @@
+#include <String>
+
 #define LED1 2 //green
 #define LED2 4 //red
 #define BUZZER 5
@@ -7,6 +9,7 @@ void initializeLED(){
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
 
+  sPrintln("LED and Buzzer initialized");
   tone(BUZZER, 1000, 1000); //Buzzer test
 }
 
@@ -23,8 +26,10 @@ void setGreenLED(int value){
 }
 
 //Shuts down active control and displays error message. code is a positive integer and corresponds to different failure points
-void enterErrorMode(int code){
+void enterErrorMode(String message, int code){
+  sPrintln(message);
   setServoDeployment(0); //Retract servo
+
   while(true){
     setError(HIGH);
     delay(2000);
@@ -40,10 +45,11 @@ void enterErrorMode(int code){
   }
 }
 
+//Turns led and buzzer on/off simulatenously 
 void setError(int level){
   setRedLED(level);
   if(level == 1){
-    //tone(BUZZER, 300);
+    tone(BUZZER, 300);
   } else
     noTone(BUZZER);
 }

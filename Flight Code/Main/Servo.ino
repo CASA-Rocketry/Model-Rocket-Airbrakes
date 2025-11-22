@@ -15,10 +15,11 @@ double currentDeployment = 0;
 
 void initializeServo(){
   servo.attach(PWM1);
+  sPrintln("Servo initialized");
 }
 
 void testServo(){
-
+  sPrintln("Testing servo");
   //Warning sequence for servo test
     for(int i = 0; i < 5; i++){
       setTone(5000, 500);

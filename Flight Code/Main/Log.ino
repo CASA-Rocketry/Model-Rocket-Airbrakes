@@ -13,23 +13,21 @@ File flightFile, simFile;
 void initializeLog(){
   
 
-  if(SERIAL){
+  #if SERIAL
     Serial.begin(9600);
-    //while(!Serial);
-  }
+    while(!Serial);
+  #endif
 
   if(!SD.begin(SD_CS)){
-    Serial.println("ERROR initializing log");
-    enterErrorMode(2);
+    enterErrorMode("ERROR initialize log", 2);
   }
 
   #if SIMULATION
     loadSim();
   #endif
-  
   loadFlight();
 
-//Create headers
+  //Create headers
   logLine[TIME_STAMP_LOG] = "time stamp";
   logLine[RAW_PRESSURE_LOG] = "raw pressure";
   logLine[RAW_TEMPERATURE_LOG] = "raw temperature";
@@ -50,30 +48,30 @@ void initializeLog(){
 
 void loadSim(){
   simName = "SIM.csv";
-  simFile = SD.open(simName);
+  simFile = SD.open("SIM.csv");
 
     if(!simFile){
-      Serial.println("ERROR opening flight file");
-      enterErrorMode(5);
+      enterErrorMode("ERROR opening sim file", 5);
   } 
-  //simFile.close();
 }
 
 void loadFlight(){
 //Create flight file
   int flightNumber = 1;
   do{
-    flightName = String((SIMULATION)? "s" : "") + "Flight" + String(flightNumber) + ".csv";
-    Serial.println(flightName);
+    #if SIMULATION
+      flightName = "simFlight" + String(flightNumber) + ".csv";
+    #else
+      flightName = "Flight" + String(flightNumber) + ".csv";
+    #endif
     flightNumber++;
   } while(SD.exists(flightName));
   
   flightFile = SD.open(flightName, FILE_WRITE);
   if(!flightFile){
-    Serial.println("ERROR opening flight file");
-    enterErrorMode(1);
+    enterErrorMode("ERROR opening flight file", 1);
   }
-  Serial.println("Successfully logging to " + flightName);
+  sPrintln("Successfully logging to " + flightName);
   updateSD();
 }
 
