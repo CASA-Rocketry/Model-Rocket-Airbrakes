@@ -1,5 +1,6 @@
 #include <Arduino.h>
-#include "Rocket.h"
+#include "Rocket/Rocket.h"
+#include "globalSettings.h"
 
 Rocket rocket;
 

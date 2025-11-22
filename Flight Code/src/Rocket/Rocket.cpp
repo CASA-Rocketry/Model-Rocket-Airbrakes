@@ -1,6 +1,7 @@
 #include "Rocket.h"
 #include "globalSettings.h"
 #include "UI/UI.h"
+#include "Log/Log.h"
 
 Rocket::Rocket(){
     #if SIM
@@ -16,7 +17,7 @@ Rocket::~Rocket(){
 
 void Rocket::readSensors(){
     altimeter->readValues();
-    sPrintln(altimeter->getAltitude());
+    //sPrintln(altimeter->getAltitude());
 }
 
 void Rocket::initialize(){
@@ -32,4 +33,6 @@ void Rocket::initialize(){
     UI::setBlue(1);
     delay(1000);
     UI::setColor(0, 0, 0);
+
+    log.initialize();
 }
