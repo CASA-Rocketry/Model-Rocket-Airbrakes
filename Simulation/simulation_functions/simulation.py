@@ -1,6 +1,6 @@
 from rocketpy import Flight
-from SimulationRev2.simulation_functions.setup_rocket import setup_rocket
-from SimulationRev2.simulation_functions.setup_environment import setup_environment
+from Simulation.simulation_functions.setup_rocket import setup_rocket
+from Simulation.simulation_functions.setup_environment import setup_environment
 
 def run_simulation(config, controller):
     try:

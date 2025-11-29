@@ -7,7 +7,7 @@ project_root = script_dir.parent
 assets_dir = project_root / 'animation_assets'
 
 sys.path.insert(0, str(project_root))
-from SimulationRev2.analysis.animation import animate_rocket_flight
+from Simulation.analysis.animation import animate_rocket_flight
 
 animate_rocket_flight(
     rocket_body_path=str(assets_dir / 'red_parts.stl'),

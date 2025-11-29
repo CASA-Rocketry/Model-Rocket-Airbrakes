@@ -24,7 +24,7 @@ def export_to_csv(flight, controller, config):
             'Control_Active': controller.data['control_active']
         })
 
-        # Export to CSV - use absolute path based on this file's location
+        # Export to CSV
         script_dir = Path(__file__).parent
         output_dir = script_dir.parent / 'output'
         output_dir.mkdir(parents=True, exist_ok=True)
