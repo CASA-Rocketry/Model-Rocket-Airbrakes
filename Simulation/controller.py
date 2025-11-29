@@ -5,6 +5,40 @@ from config import Config
 from controller_functions.predict_apogee import predict_apogee
 from controller_functions.convert_p_2_alt import find_altitude
 
+
+def quaternion_to_rotation_matrix(e0, e1, e2, e3):
+    """Convert quaternion to rotation matrix"""
+    # Normalize quaternion
+    norm = np.sqrt(e0**2 + e1**2 + e2**2 + e3**2)
+    if norm > 0:
+        e0, e1, e2, e3 = e0/norm, e1/norm, e2/norm, e3/norm
+
+    # Convert to rotation matrix (body to world)
+    R = np.array([
+        [1 - 2*(e2**2 + e3**2), 2*(e1*e2 - e0*e3), 2*(e1*e3 + e0*e2)],
+        [2*(e1*e2 + e0*e3), 1 - 2*(e1**2 + e3**2), 2*(e2*e3 - e0*e1)],
+        [2*(e1*e3 - e0*e2), 2*(e2*e3 + e0*e1), 1 - 2*(e1**2 + e2**2)]
+    ])
+
+    return R
+
+
+def correct_accelerometer_orientation(accel_body, e0, e1, e2, e3):
+    """
+    Transform accelerometer reading from body frame to world frame
+
+    Args:
+        accel_body: 3D acceleration vector in body frame [ax, ay, az]
+        e0, e1, e2, e3: Quaternion components representing rocket orientation
+
+    Returns:
+        Vertical acceleration component in world frame (positive = up)
+    """
+    R = quaternion_to_rotation_matrix(e0, e1, e2, e3)
+    accel_world = R @ accel_body
+    return accel_world[2]  # Return vertical component
+
+
 class Control:
 
     def __init__(self, config: Config):
@@ -36,6 +70,10 @@ class Control:
         # Extract state
         altitude = state[2]  # MSL altitude
         velocity = state[5]  # Vertical velocity (positive = up)
+        e0 = state[6]
+        e1 = state[7]
+        e2 = state[8]
+        e3 = state[9]
 
         # Convert to AGL
         altitude_agl = altitude - self.config.env_elevation
@@ -70,14 +108,31 @@ class Control:
                 self.filter_init = True
 
                 # Use initial measurements for first data point
-                measurement_accel = accelerometer.measurement[2]
+                if self.config.use_orientation_correction:
+                    # Transform accelerometer from body frame to world frame
+                    measurement_accel = correct_accelerometer_orientation(
+                        accelerometer.measurement, e0, e1, e2, e3
+                    )
+                else:
+                    # Use raw Z-axis measurement (assumes rocket is vertical)
+                    measurement_accel = accelerometer.measurement[2]
+
                 filtered_y = measurement_agl
                 filtered_v = 0
                 filtered_a = measurement_accel
 
             else:
                 measurement_agl = find_altitude(barometer.measurement, self.p_0)
-                measurement_accel = accelerometer.measurement[2]
+
+                if self.config.use_orientation_correction:
+                    # Transform accelerometer from body frame to world frame
+                    measurement_accel = correct_accelerometer_orientation(
+                        accelerometer.measurement, e0, e1, e2, e3
+                    )
+                else:
+                    # Use raw Z-axis measurement (assumes rocket is vertical)
+                    measurement_accel = accelerometer.measurement[2]
+
                 self.kalman_filter.update(measurement_agl, measurement_accel, time, self.config.burn_time)
                 filtered_y = self.kalman_filter.getYEstimate()
                 filtered_v = self.kalman_filter.getVEstimate()

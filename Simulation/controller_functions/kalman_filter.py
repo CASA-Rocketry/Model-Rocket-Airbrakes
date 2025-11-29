@@ -1,11 +1,10 @@
 import numpy as np
-from config import Config
 
 
 class KalmanAltitudeFilter:
     """Kalman filter for altitude and velocity estimation"""
 
-    def __init__(self, config: Config):
+    def __init__(self, config):
         self.config = config
         self.initialized = False
         self.previous_time = None

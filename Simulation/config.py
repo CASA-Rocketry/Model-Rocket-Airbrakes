@@ -47,18 +47,19 @@ class Config:
     sampling_rate: int = 20 # Control algorithm frequency
     terminate_on_apogee = True
 
-    # Accelerometer parameters
+    # Accelerometer parameters - Set up for bno055
     accel_range = 160  # m/s2
     accel_resolution = 0.01  # m/s2
-    accel_noise_density = 0
-    accel_noise_variance = 0.017
+    accel_noise_density = 0.0015 # m/s2/sqrthz
+    accel_noise_variance = 0.0
     accel_random_walk_density = 0.0
     accel_constant_bias = 0.0
-    accel_temperature_bias = 0.0
+    accel_temperature_bias = 0.0003 # %/C
     accel_temperature_scale_factor = 0.0
-    accel_cross_axis_sensitivity = 0.0
+    accel_cross_axis_sensitivity = 0.01 # %
     accel_operating_temp = 25.0  # Celsius
     accele_position = 0.3  # meters from nose
+    use_orientation_correction = True  # Correct accelerometer. Uses sim orientation, not imu fusion.
 
     # Barometer parameters
     barometer_range = 120000  # Pa
