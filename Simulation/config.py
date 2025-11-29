@@ -49,7 +49,7 @@ class ControllerConfig:
     accel_cross_axis_sensitivity = 0.0
 
     # Kalman filter params
-    alt_std = 1.73932
+    alt_std = 0.73932
     accel_std = 0.2  # Standard deviation for accelerometer measurements
 
     # Params for first phase of flight (before motor burnout)
