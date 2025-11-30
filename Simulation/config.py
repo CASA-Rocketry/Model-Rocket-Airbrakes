@@ -98,3 +98,10 @@ class Config:
     engine_file = "input_data/AeroTech_F42T_L.eng"
     airbrake_drag_curve_file = "input_data/airbrake_drag_curve.csv"
     rocket_drag_curve_file = "input_data/rocket_drag_curve.csv"
+
+    # Monte carlo
+    use_monte_carlo = True
+    impulse_std = 1 # Ns
+    mass_std = 0.001 # kg
+    com_std = 0.025 # m
+    wind_std = (1, 3) # (nominal multiplier, std) m/s
