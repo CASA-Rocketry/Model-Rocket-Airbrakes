@@ -80,6 +80,8 @@ class Config:
     model_v_std = 0.1
     model_a_std = 0.015
 
+    use_airbrake = True
+
     # Control parameters
     kp = 0.012
     ki = 0.0
@@ -100,8 +102,7 @@ class Config:
     rocket_drag_curve_file = "input_data/rocket_drag_curve.csv"
 
     # Monte carlo
-    use_monte_carlo = True
-    impulse_std = 1 # Ns
+    impulse_std = 0.35 # Ns - Based on data from https://www.thrustcurve.org/motors/cert/62d80c95ac50e90004732ded/F42.pdf
     mass_std = 0.001 # kg
-    com_std = 0.025 # m
-    wind_std = (1, 3) # (nominal multiplier, std) m/s
+    com_std = 0.005 # m
+    wind_std = (1, 1) # (nominal multiplier, std)

@@ -92,6 +92,10 @@ class Control:
         else:
             self.control_active = True
 
+        # Don't deploy if airbrake is disabled
+        if self.config.use_airbrake == False:
+            self.control_active = False
+
         # Only update state if this is a new timestep (to handle multiple calls per timestep)
         if time - self.last_time >= 1.0 / sampling_rate * 0.5:  # More than half a sampling period and control active
 

@@ -394,8 +394,8 @@ def animate_rocket_flight(
         else:
             focal_z = interp_z[cam_i]  # Focus on middle of rocket, not COM
             plotter.camera_position = [
-                (-10,
-                 10,
+                (-100,
+                 100,
                  2),
                 (interp_x[cam_i], interp_y[cam_i], focal_z),
                 (0, 0, 1)
