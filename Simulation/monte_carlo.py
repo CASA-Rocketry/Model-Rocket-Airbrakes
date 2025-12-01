@@ -1,7 +1,3 @@
-"""
-Minimal Monte Carlo Script - Only outputs graph
-"""
-
 import sys
 from pathlib import Path
 import numpy as np
