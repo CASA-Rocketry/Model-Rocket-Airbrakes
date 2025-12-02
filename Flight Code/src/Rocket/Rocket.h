@@ -1,10 +1,12 @@
 #include "Altimeter/Altimeter.h"
+#include "Airbrake/Airbrake.h"
 #include "Log/Log.h"
 
 class Rocket {
 private:
     Altimeter* altimeter;
     Log log;
+    Airbrake brake;
 public:
     Rocket();
     ~Rocket();
