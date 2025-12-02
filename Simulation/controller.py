@@ -65,6 +65,7 @@ class Control:
         self.i_error_list = []
         self.last_desired_deployment = 0
         self.last_error = 0
+        self.leak_f = config.leak_f
 
     def controller(self, time, sampling_rate, state, state_history, observed_variables, air_brakes, sensors):
         # Extract state
@@ -153,11 +154,14 @@ class Control:
             dt = 1 / self.config.sampling_rate
             self.last_time = time
 
-            # Calculate error integral
-            self.i_error += error * dt
+            # in controller
+            alpha = np.exp(-dt / self.leak_f)  # decay factor per step
+            if self.control_active and time > self.config.burn_time + 1.5:
+                #self.i_error = alpha * self.i_error + (1 - alpha) * (error * self.leak_f)
+                self.i_error += error * dt
 
             # Calculate error derivative
-            d_error = (self.last_error - error) / dt
+            d_error = (error - self.last_error) / dt
             self.last_error = error
 
             kp = self.config.kp

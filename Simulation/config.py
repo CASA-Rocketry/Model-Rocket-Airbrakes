@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class Config:
     # Physical parameters
     rocket_radius = 0.028
-    dry_mass = 0.573
+    dry_mass = 0.557 #0.573
     burnout_mass = dry_mass + 0.027
     I_xx = 0.031  # Get from CAD file (kg-m3)
     I_yy = 0.031
@@ -84,14 +84,15 @@ class Config:
 
     # Control parameters
     kp = 0.012
-    ki = 0.0
-    kd = 0
+    ki = 0.5
+    kd = 0.0002
+    leak_f = 1
     deadband = 0.1 # Meters
 
     # Controller parameters
     max_deployment_rate = 2.5   # deployment / time
-    apogee_prediction_cd = 0.71   # Should match the rocket drag curve. Based on 4th flight of rocket
-    airbrake_drag = 0.35    # Max Cd from airbrake. Needs to match airbrake drag curve
+    apogee_prediction_cd = 0.71   # Should match the rocket drag curve. Based on 4th flight of rocket 0.71
+    airbrake_drag = 0.8    # Max Cd from airbrake. Needs to match airbrake drag curve 0.35
 
     # Timing parameters
     burn_time = 1.4
@@ -106,3 +107,5 @@ class Config:
     mass_std = 0.001 # kg
     com_std = 0.005 # m
     wind_std = (1, 1) # (nominal multiplier, std)
+    rocket_cd_std = 0.05
+    airbrake_cd_std = 0.05

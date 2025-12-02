@@ -37,6 +37,7 @@ class CustomStochasticRocket(StochasticRocket):
     def create_object(self):
         new_rocket = super().create_object()
         from rocketpy import Barometer, Accelerometer
+        import pandas as pd
 
         barometer = Barometer(
             sampling_rate=self.config.sampling_rate,
@@ -69,9 +70,20 @@ class CustomStochasticRocket(StochasticRocket):
         )
         new_rocket.add_sensor(accelerometer, position=(0, 0, self.config.accele_position))
 
+        # Apply variance to airbrake drag coefficient
+        airbrake_cd_multiplier = np.random.normal(1.0, self.config.airbrake_cd_std)
+
+        # Load and modify airbrake drag curve
+        drag_curve_file = self._airbrake_config['drag_coefficient_curve']
+        df = pd.read_csv(drag_curve_file)
+        # Multiply the drag coefficient values (second column) by the random multiplier
+        df.iloc[:, 1] = df.iloc[:, 1] * airbrake_cd_multiplier
+        # Convert to list of [deployment, drag_coefficient] pairs
+        modified_drag_curve = df.values.tolist()
+
         controller_instance = self.controller_class(self.config)
         new_rocket.add_air_brakes(
-            drag_coefficient_curve=self._airbrake_config['drag_coefficient_curve'],
+            drag_coefficient_curve=modified_drag_curve,
             controller_function=controller_instance.controller,
             sampling_rate=self._airbrake_config['sampling_rate'],
             reference_area=self._airbrake_config['reference_area'],
@@ -118,6 +130,8 @@ def run_monte_carlo(config, num_simulations=100):
         config=config,
         mass=(config.dry_mass, config.mass_std),
         center_of_mass_without_motor=(config.com_no_motor, config.com_std),
+        power_off_drag_factor=(1.0, config.rocket_cd_std),
+        power_on_drag_factor=(1.0, config.rocket_cd_std),
     )
 
     stochastic_rocket.add_motor(stochastic_motor, position=config.motor_position)
@@ -196,7 +210,7 @@ def create_plot(monte_carlo, config):
     csv_data = {
         'Simulation': range(1, len(apogees_agl) + 1),
         'Apogee_AGL_m': apogees_agl,
-        'Error_m': apogees_agl - config.target_apogee - 1.5,
+        'Error_m': apogees_agl - config.target_apogee + 1.5,
     }
 
     # Extract stochastic input parameters from inputs_log
@@ -227,32 +241,23 @@ def create_plot(monte_carlo, config):
     df.to_csv(csv_path, index=False)
 
     # Create plots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
 
-    # Apogee distribution
-    ax1.hist(apogees_agl, bins=30, edgecolor='black', alpha=0.7)
-    ax1.axvline(config.target_apogee - 1.5, color='r', linestyle='--', linewidth=2, label='Target')
-    ax1.axvline(np.mean(apogees_agl), color='g', linestyle='--', linewidth=2, label='Mean')
-    ax1.set_xlabel('Apogee (m AGL)')
-    ax1.set_ylabel('Frequency')
-    ax1.set_title('Apogee Distribution')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
+    # Apogee distribution with fixed bin width
+    bin_width = 0.25  # meters
+    bin_edges = np.arange(config.target_apogee - 5, config.target_apogee + 5 + bin_width, bin_width)
 
-    # Max airbrake deployment distribution
-    if 'max_airbrake_deployment' in monte_carlo.results:
-        deployments = monte_carlo.results['max_airbrake_deployment']
-        deployments = np.array([d if d is not None else 0.0 for d in deployments])
-        deployments = deployments[~np.isnan(deployments)]
+    ax.hist(apogees_agl, bins=bin_edges, edgecolor='black', alpha=0.7)
+    ax.axvline(config.target_apogee - 1.5, color='r', linestyle='--', linewidth=2, label='Target')
+    ax.axvline(np.mean(apogees_agl), color='g', linestyle='--', linewidth=2, label='Mean')
+    ax.set_xlabel('Apogee (m AGL)')
+    ax.set_ylabel('Frequency')
+    ax.set_title('Apogee Distribution')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
 
-        ax2.hist(deployments, bins=30, edgecolor='black', alpha=0.7, color='purple')
-        ax2.set_xlabel('Max Deployment (0-1)')
-        ax2.set_ylabel('Frequency')
-        ax2.set_title(f'Max Airbrake Deployment\n(Mean: {np.mean(deployments):.3f})')
-        ax2.grid(True, alpha=0.3)
-    else:
-        ax2.text(0.5, 0.5, 'Airbrake Data\nNot Available', ha='center', va='center', transform=ax2.transAxes)
-        ax2.set_title('Max Airbrake Deployment Distribution')
+    # Set fixed x-axis limits centered around target apogee
+    ax.set_xlim(config.target_apogee - 5, config.target_apogee + 5)
 
     plt.tight_layout()
     plot_path = output_dir / "monte_carlo_plots.png"
