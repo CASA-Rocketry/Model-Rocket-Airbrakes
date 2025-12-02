@@ -1,5 +1,6 @@
 #include "UI.h"
 #include <Arduino.h>
+#include "globalSettings.h"
 #include "../hardwareMap.cpp"
 
 void UI::initialize(){
@@ -9,6 +10,7 @@ void UI::initialize(){
 
     pinMode(BUTTON, INPUT);
     pinMode(BUZZER, OUTPUT);
+    sPrintln("UI Initialized");
 }
 
 //Returns true for pressed, false for not pressed

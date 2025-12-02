@@ -4,7 +4,7 @@
 
 class Rocket {
 private:
-    Altimeter* altimeter;
+    //PhysicalAltimeter altimeter;
     Log log;
     Airbrake brake;
 public:

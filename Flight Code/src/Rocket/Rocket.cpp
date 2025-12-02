@@ -4,25 +4,21 @@
 #include "Log/Log.h"
 
 Rocket::Rocket(){
-    #if SIM
-        altimeter = new SimAltimeter();
-    #else
-        altimeter = new PhysicalAltimeter();
-    #endif
+
 }
 
 Rocket::~Rocket(){
-    delete altimeter;
 }
 
 void Rocket::readSensors(){
-    altimeter->readValues();
+    //altimeter.readValues();
     //sPrintln(altimeter->getAltitude());
 }
 
 void Rocket::initialize(){
-    altimeter->initialize();
+    //altimeter->initialize();
     UI::initialize();
+
     UI::setTone(3000, 5000); //Buzzer test
     
     //Light test
@@ -34,5 +30,6 @@ void Rocket::initialize(){
     delay(1000);
     UI::setColor(0, 0, 0);
 
+    brake.test();
     log.initialize();
 }

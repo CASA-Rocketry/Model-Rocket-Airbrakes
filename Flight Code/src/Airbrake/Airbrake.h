@@ -1,8 +1,8 @@
-#include <Servo.h>
+#include <PWMServo.h>
 
 class Airbrake{
 private:
-    Servo servo;
+    PWMServo servo;
     float deployment;
 
 public:

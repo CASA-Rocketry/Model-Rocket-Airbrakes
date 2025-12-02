@@ -1,13 +1,31 @@
 #include "Airbrake.h"
 #include "../hardwareMap.cpp"
+#include "../UI/UI.h"
+#include <Arduino.h>
 
 Airbrake::Airbrake(){
-    servo.attach(PWM1);
+    servo.attach(PWM5);
     setDeployment(0);
 }
 
 void Airbrake::test(){
+    //Warning beeps
+    for(int i = 0; i < 5; i++){
+        UI::setTone(500, 500);
+        delay(1000);
+    }
 
+    //Slow pass
+    for(double a = 0; a <= PI; a += PI/500){
+        setDeployment(sin(a));
+        delay(10);
+    }
+
+    //Fast pass
+    delay(1000);
+    open();
+    delay(1000);
+    close(); 
 }
 
 //Sets servo from 0 to 1 and updates deployment

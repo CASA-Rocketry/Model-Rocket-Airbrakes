@@ -1,7 +1,7 @@
 #define SIM false
-#define SERIAL true
+#define SERIAL_MODE true
 
-#if SERIAL
+#if SERIAL_MODE
   #define sPrint(a) Serial.print(a)
   #define sPrintln(a) Serial.println(a)
 #else
