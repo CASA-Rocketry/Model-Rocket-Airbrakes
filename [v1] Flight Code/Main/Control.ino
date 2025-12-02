@@ -1,8 +1,11 @@
-#define TARGET_APOGEE 229
+#define TARGET_APOGEE 195
 #define TARGET_DURATION 37.5 //36s to 39s 0 points
+#define KP 400
 
 void runApogeeControl(){
-//Pid
+  float error = getApogeeEstimate() - TARGET_APOGEE;
+  setServoDeployment(error * KP);
+  //setServoDeployment(1);
 }
 
 
