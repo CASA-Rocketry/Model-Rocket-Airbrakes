@@ -9,3 +9,4 @@ void Log::initialize(){
 bool Log::hasCard(){
     return digitalRead(SD_CD) == LOW; //grounded when card in
 }
+

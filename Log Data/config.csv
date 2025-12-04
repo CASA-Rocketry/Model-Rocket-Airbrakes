@@ -1,0 +1,3 @@
+Name	Burnout Mass	Target Apogee	Air Density	Rocket CD	Airbrake CD Full deployment	Rocket Area	Kalman Filter Model STD Y	Kalman Filter Model STD V	Kalman Filter Model STD A	Kalman Filter Measurement STD Y	Kalman Filter Measurement STD A	Launch Acceleration Threshold	Coast Lockout	KP
+Unit	kg	m	kg/m^3	none	none	m^2	m	m/s	m/s^2	m/s	m/s^2	m/s^2	s	1/s
+Value	0.617	195	1.18	0.71	0.8	0.002463	0.05	0.1	0.015	0.26	0.013	20	1.5	0.24
