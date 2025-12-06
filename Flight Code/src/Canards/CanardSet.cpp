@@ -2,10 +2,10 @@
 
 CanardSet::CanardSet(){
     //Attach canards to pins
-    c1.setPin(PWM1);
-    c2.setPin(PWM2);
-    c3.setPin(PWM3);
-    c4.setPin(PWM4);
+    c1.setPin(hardwareMap::PWM1);
+    c2.setPin(hardwareMap::PWM2);
+    c3.setPin(hardwareMap::PWM3);
+    c4.setPin(hardwareMap::PWM4);
 }
 
 //tx = pitch forward/backward

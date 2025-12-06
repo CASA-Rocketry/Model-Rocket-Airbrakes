@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 Airbrake::Airbrake(){
-    servo.attach(PWM5);
+    servo.attach(hardwareMap::PWM5);
     setDeployment(0);
 }
 
