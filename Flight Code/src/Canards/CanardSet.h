@@ -1,5 +1,5 @@
 #include "Canard.h"
-#include "../hardwareMap.cpp"
+#include "../hardwareMap.h"
 
 
 class CanardSet{

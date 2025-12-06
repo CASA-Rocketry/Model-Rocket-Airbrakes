@@ -1,5 +1,5 @@
 #include "Airbrake.h"
-#include "../hardwareMap.cpp"
+#include "../hardwareMap.h"
 #include "../UI/UI.h"
 #include <Arduino.h>
 

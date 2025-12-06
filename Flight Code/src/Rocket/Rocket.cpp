@@ -17,19 +17,22 @@ void Rocket::readSensors(){
 
 void Rocket::initialize(){
     //altimeter->initialize();
-    // UI::initialize();
+    UI::initialize();
 
-    // UI::setTone(3000, 5000); //Buzzer test
-    
-    // //Light test
-    // UI::setRed(1);
-    // delay(1000);
-    // UI::setGreen(1);
-    // delay(1000);
-    // UI::setBlue(1);
-    // delay(1000);
-    // UI::setColor(0, 0, 0);
+
 
     // brake.test();
     log.initialize();
+
+    //Indicate successful initialization
+    UI::setTone(3000, 5000);
+    
+    //Light test
+    UI::setRed(1);
+    delay(1000);
+    UI::setGreen(1);
+    delay(1000);
+    UI::setBlue(1);
+    delay(1000);
+    UI::setColor(0, 0, 0);
 }

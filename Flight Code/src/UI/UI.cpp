@@ -1,7 +1,7 @@
 #include "UI.h"
 #include <Arduino.h>
 #include "globalSettings.h"
-#include "../hardwareMap.cpp"
+#include "../hardwareMap.h"
 
 void UI::initialize(){
     pinMode(hardwareMap::LED_RED, OUTPUT);
