@@ -1,3 +1,18 @@
-Name	Burnout Mass	Target Apogee	Air Density	Rocket CD	Airbrake CD Full deployment	Rocket Area	Kalman Filter Model STD Y	Kalman Filter Model STD V	Kalman Filter Model STD A	Kalman Filter Measurement STD Y	Kalman Filter Measurement STD A	Launch Acceleration Threshold	Coast Lockout	KP
-Unit	kg	m	kg/m^3	none	none	m^2	m	m/s	m/s^2	m/s	m/s^2	m/s^2	s	1/s
-Value	0.617	195	1.18	0.71	0.8	0.002463	0.05	0.1	0.015	0.26	0.013	20	1.5	0.24
+﻿Simulation Mode (T/F),F
+Airbrakes Enabled (T/F),T
+Log File Name,Flight 
+Sim File Name (if applicable),Sim
+Burnout Mass (kg),0.617
+Air Density (kg/m^3),1.18
+Rocket CD,0.71
+Airbrake CD,0.8
+Rocket Area (m^2),0.00243
+Kalman Model Y STD,0.05
+Kalman Model V STD,0.1
+Kalman Model A STD,0.015
+Kalman Measurement Y STD,0.26
+Kalman Measurement A STD,0.013
+Target Apogee (m),195
+Launch Acceleration Threshold (m/s^2),20
+Coast Lockout (s),1.5
+KP (1/s),0.24

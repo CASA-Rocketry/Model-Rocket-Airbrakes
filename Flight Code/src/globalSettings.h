@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #define SIM false
 #define SERIAL_MODE true
 
