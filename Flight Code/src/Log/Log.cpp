@@ -27,8 +27,8 @@ void Log::initialize(){
     openLogFile();
 
     //Store config in logFile
-    logFile.write(config::configString.c_str());
-    logFile.flush();
+    flightFile.write(config::configString.c_str());
+    flightFile.flush();
     
     if(config::SIMULATION);
         //openSimFile();
@@ -67,8 +67,8 @@ void Log::openLogFile(){
         sPrintln(flightFileName.c_str());
         counter++;
     } while(SD.exists(flightFileName.c_str()));
-    logFile = SD.open(flightFileName.c_str(), FILE_WRITE);
-    if(logFile)
+    flightFile = SD.open(flightFileName.c_str(), FILE_WRITE);
+    if(flightFile)
         sPrintln(("Successfully opened " + flightFileName + " for logging").c_str());
     else
         sPrintln(("Could not open " + flightFileName + " for logging").c_str());
@@ -76,7 +76,7 @@ void Log::openLogFile(){
 
 
 void Log::flushSD(){
-    logFile.flush();
+    flightFile.flush();
 }
 
 //Calls all the getters and updates logLine
@@ -88,15 +88,22 @@ void Log::updateLogLine(){
 
 //Writes logLine to SD card
 void Log::writeLogLine(){
-    std::string write = "";
+    std::string line = "";
     for(std::string str : logLine){
-        write += str;
+        line += str + ",";
     }
-    sPrintln(write.c_str());
+    line += "\n";
+    sPrint(line.c_str());
+    flightFile.write(line.c_str());
 }
 
 //Updates and writes logLine
 void Log::update(){
     updateLogLine();
     writeLogLine();
+}
+
+void Log::attachTag(std::string name, std::function<std::string()> stringGetter){
+    logLine.push_back(name);
+    logGetters.push_back(stringGetter);
 }

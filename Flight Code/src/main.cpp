@@ -14,7 +14,7 @@ void setup() {
 }
 
 void loop() {
-  rocket.readSensors();
+  rocket.update();
   //sPrintln("Hello");
   delay(100);
 }

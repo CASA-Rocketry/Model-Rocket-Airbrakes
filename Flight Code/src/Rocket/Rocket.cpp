@@ -12,29 +12,22 @@ Rocket::~Rocket(){
 }
 
 void Rocket::readSensors(){
-    //altimeter.readValues();
+    altimeter.readValues();
     //sPrintln(altimeter->getAltitude());
 }
 
 
 void Rocket::initialize(){
     //altimeter->initialize();
-    int x = 0;
-    bool b = false;
+    altimeter.initialize();
+
     UI::initialize();
 
 
     
     // brake.test();
     log.initialize();
-    log.attachTag("Test", x);
-    log.attachTag(" TF Test", b);
-    log.writeLogLine();
-    log.update();
-    x = 2;
-    b = true;
-    log.update();
-    
+    addLogTags();
 
     //Indicate successful initialization
     UI::setTone(3000, 5000);
@@ -47,4 +40,23 @@ void Rocket::initialize(){
     UI::setBlue(1);
     delay(1000);
     UI::setColor(0, 0, 0);
+
+    altimeter.calibrate();
+}
+
+void Rocket::addLogTags(){
+    log.attachTag("Altitude AGL (m)", altimeter.altitude);
+    log.attachTag("Temperature (deg C)", altimeter.temperature);
+
+    //Print headers
+    log.writeLogLine();
+}
+
+void Rocket::update(){
+    readSensors();
+    log.update();
+    if(UI::getButton()){
+        log.flushSD();
+        sPrintln("Flushing SD");
+    }
 }

@@ -9,7 +9,7 @@
 
 class Log{
 private:
-    File logFile, simFile, configFile;
+    File flightFile, simFile, configFile;
     std::vector<std::string> logLine;
     std::vector<std::function<std::string()>> logGetters;
     int valuesAttached = 0; //tracks number of logLine entries that have been attached
@@ -25,7 +25,7 @@ public:
     //Templated methods need to be defined in .h file
     template <typename T> void attachTag(std::string name, T& valRef){
         //Add name to first logLine (header line)
-        logLine.push_back(name);
+        
         std::function<std::string()> stringGetter;
         if(std::is_same<T, bool>::value){
             //Bool to string
@@ -34,9 +34,10 @@ public:
             //Int/double/float to string
             stringGetter = [&]() {return std::to_string(valRef);};
         }
-        logGetters.push_back(stringGetter);
+        attachTag(name, stringGetter);
     }
-    
+    void attachTag(std::string, std::function<std::string()>);
+
     void update();
     void flushSD();
     void writeLogLine(); //Could be private, but used once publically to write headers

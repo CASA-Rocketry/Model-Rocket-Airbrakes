@@ -4,9 +4,10 @@
 
 class Rocket {
 private:
-    //PhysicalAltimeter altimeter;
+    PhysicalAltimeter altimeter;
     Log log;
     Airbrake brake;
+    void addLogTags();
 public:
     Rocket();
     ~Rocket();
