@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <string>
 #include "../config.h"
+#include <type_traits>
 
 void Log::initialize(){
     pinMode(hardwareMap::SD_CD, INPUT);
@@ -71,4 +72,22 @@ void Log::openLogFile(){
         sPrintln(("Successfully opened " + flightFileName + " for logging").c_str());
     else
         sPrintln(("Could not open " + flightFileName + " for logging").c_str());
+}
+
+template <typename T>
+void Log::attachLogTag(std::string name, T& valRef){
+    if(valuesAttached == VALUES_LOGGED){
+        sPrintln("Too many values attached");
+        return; //Don't add more values than max of array
+    }
+    //logGetters[valuesAttached]
+    //[&] () => {return toString(valRef)}
+   // logLine[valuesAttached] = 
+}
+
+template <typename T>
+std::string toString(T val){
+    if(std::is_same<T, bool>::value)
+        return val ? "T" : "F";
+    return std::to_string(val);
 }
