@@ -11,6 +11,6 @@ public:
     Rocket();
     ~Rocket();
     void readSensors();
-    void updateLog();
+    void update();
     void initialize();
 };

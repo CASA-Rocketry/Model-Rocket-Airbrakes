@@ -3,24 +3,41 @@
 #include "../hardwareMap.h"
 #include <Arduino.h>
 #include <string>
+#include <vector>
 #pragma once
 
-const int VALUES_LOGGED = 10;
 
 class Log{
 private:
     File logFile, simFile, configFile;
-    std::string logLine[VALUES_LOGGED] = {};
-    std::function<std::string()> logGetters[VALUES_LOGGED] = {};
+    std::vector<std::string> logLine;
+    std::vector<std::function<std::string()>> logGetters;
     int valuesAttached = 0; //tracks number of logLine entries that have been attached
     void readConfig();
     void openLogFile();
     void openSimFile();
-    template <typename T>
-    std::string toString(T);
+    void updateLogLine();
+
 public:
     void initialize();
     bool hasCard();
-    template <typename T>
-    void attachLogTag(std::string, T&);
+
+    //Templated methods need to be defined in .h file
+    template <typename T> void attachTag(std::string name, T& valRef){
+        //Add name to first logLine (header line)
+        logLine.push_back(name);
+        std::function<std::string()> stringGetter;
+        if(std::is_same<T, bool>::value){
+            //Bool to string
+            stringGetter = [&]() {return valRef ? "T" : "F";};
+        } else {
+            //Int/double/float to string
+            stringGetter = [&]() {return std::to_string(valRef);};
+        }
+        logGetters.push_back(stringGetter);
+    }
+    
+    void update();
+    void flushSD();
+    void writeLogLine(); //Could be private, but used once publically to write headers
 };
