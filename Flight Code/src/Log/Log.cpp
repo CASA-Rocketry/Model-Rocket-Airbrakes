@@ -26,12 +26,19 @@ void Log::initialize(){
     readConfig();
     openLogFile();
 
-    //Store config in logFile
-    flightFile.write(config::configString.c_str());
-    flightFile.flush();
+    printPreamble();
     
     if(config::SIMULATION);
         //openSimFile();
+}
+
+void Log::printPreamble(){
+    //Log date and time of compile
+    logPrintln(std::string("Code compiled on ") + __DATE__ + " at " + __TIME__);
+    
+    //Store config in logFile
+    flightFile.write(config::configString.c_str());
+    flightFile.flush();
 }
 
 //Opens config file, reads all the data and sends to Config, then closes file
@@ -92,9 +99,7 @@ void Log::writeLogLine(){
     for(std::string str : logLine){
         line += str + ",";
     }
-    line += "\n";
-    sPrint(line.c_str());
-    flightFile.write(line.c_str());
+    logPrintln(line);
 }
 
 //Updates and writes logLine
@@ -106,4 +111,10 @@ void Log::update(){
 void Log::attachTag(std::string name, std::function<std::string()> stringGetter){
     logLine.push_back(name);
     logGetters.push_back(stringGetter);
+}
+
+//Prints single line in log, no \n needed in string
+void Log::logPrintln(std::string line){
+    flightFile.write(line.c_str());
+    flightFile.write("\n");
 }

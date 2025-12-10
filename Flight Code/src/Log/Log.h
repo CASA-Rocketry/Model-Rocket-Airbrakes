@@ -23,7 +23,8 @@ public:
     bool hasCard();
 
     //Templated methods need to be defined in .h file
-    template <typename T> void attachTag(std::string name, T& valRef){
+    template <typename T> 
+    void attachTag(std::string name, T& valRef){
         //Add name to first logLine (header line)
         
         std::function<std::string()> stringGetter;
@@ -41,4 +42,6 @@ public:
     void update();
     void flushSD();
     void writeLogLine(); //Could be private, but used once publically to write headers
+    void printPreamble();
+    void logPrintln(std::string);
 };
