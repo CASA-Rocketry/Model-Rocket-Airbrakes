@@ -1,15 +1,11 @@
 #include <Arduino.h>
 #include "Rocket/Rocket.h"
-#include "globalSettings.h"
+#include "Log/print.h"
 
 Rocket rocket;
 
 void setup() {
-  #if SERIAL_MODE
-    Serial.begin(9600);
-    //while(!Serial);
-  #endif
-
+  startSerial();
   rocket.initialize();
 }
 

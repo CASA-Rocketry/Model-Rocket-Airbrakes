@@ -7,6 +7,7 @@
 #pragma once
 
 
+
 class Log{
 private:
     File flightFile, simFile, configFile;
@@ -17,7 +18,6 @@ private:
     void openLogFile();
     void openSimFile();
     void updateLogLine();
-
 public:
     void initialize();
     bool hasCard();

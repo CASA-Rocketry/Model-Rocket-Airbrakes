@@ -1,5 +1,5 @@
 #include "Log.h"
-#include "globalSettings.h"
+#include "print.h"
 #include "../hardwareMap.h"
 #include <Arduino.h>
 #include <string>
@@ -37,8 +37,8 @@ void Log::printPreamble(){
     logPrintln(std::string("Code compiled on ") + __DATE__ + " at " + __TIME__);
     
     //Store config in logFile
-    flightFile.write(config::configString.c_str());
-    flightFile.flush();
+    logPrintln(config::configString.c_str());
+    flushSD();
 }
 
 //Opens config file, reads all the data and sends to Config, then closes file
@@ -117,4 +117,8 @@ void Log::attachTag(std::string name, std::function<std::string()> stringGetter)
 void Log::logPrintln(std::string line){
     flightFile.write(line.c_str());
     flightFile.write("\n");
+    #if PRINT_LOG_TO_SERIAL
+        sPrint("LOG -- ");
+        sPrintln(line.c_str());
+    #endif
 }

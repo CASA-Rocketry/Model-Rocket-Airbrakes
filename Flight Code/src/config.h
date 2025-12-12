@@ -3,7 +3,7 @@
 #pragma once
 
 #include <string>
-#include "globalSettings.h"
+#include "Log/print.h"
 
 namespace config{
     const int CONFIG_VALUES = 19;

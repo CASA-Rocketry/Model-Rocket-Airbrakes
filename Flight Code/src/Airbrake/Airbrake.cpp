@@ -2,6 +2,7 @@
 #include "../hardwareMap.h"
 #include "../UI/UI.h"
 #include <Arduino.h>
+#include "../constants.h"
 
 Airbrake::Airbrake(){
     servo.attach(hardwareMap::PWM5);
@@ -39,7 +40,7 @@ void Airbrake::setDeployment(double val){
     deployment = val;
     
     //TODO: add mapping
-    servo.write(val * 180);
+    servo.write(val * constants::airbrake::MAX_DEPLOYMENT_DEGREES);
 }
 
 void Airbrake::close(){
