@@ -15,11 +15,3 @@
   #define sPrintln(a) //delete occurence of sPrintln
 #endif
 
-void startSerial(){
-    #if SERIAL_ENABLED
-        Serial.begin(9600);
-        #if WAIT_FOR_SERIAL_CONNECTION
-            while(!Serial);
-        #endif
-    #endif
-}

@@ -5,7 +5,12 @@
 Rocket rocket;
 
 void setup() {
-  startSerial();
+  #if SERIAL_ENABLED
+      Serial.begin(9600);
+      #if WAIT_FOR_SERIAL_CONNECTION
+          while(!Serial);
+      #endif
+  #endif
   rocket.initialize();
 }
 
