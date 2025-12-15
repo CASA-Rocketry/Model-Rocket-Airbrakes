@@ -3,7 +3,7 @@
 #pragma once
 
 #include <string>
-#include "globalSettings.h"
+#include "Log/print.h"
 
 namespace config{
     const int CONFIG_VALUES = 19;
@@ -75,6 +75,7 @@ namespace config{
     }
 
     //Accepts config in string form and adds values to configValues
+    //TODO: fix this bad indexing
     void parseConfig(std::string config, std::string configValues[]){
         int startIndex, breakIndex = -1;
             int constantsFilled = 0;

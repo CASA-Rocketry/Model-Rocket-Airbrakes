@@ -1,9 +1,10 @@
 #include "Log.h"
-#include "globalSettings.h"
+#include "print.h"
 #include "../hardwareMap.h"
 #include <Arduino.h>
 #include <string>
 #include "../config.h"
+#include <type_traits>
 
 void Log::initialize(){
     pinMode(hardwareMap::SD_CD, INPUT);
@@ -25,12 +26,19 @@ void Log::initialize(){
     readConfig();
     openLogFile();
 
-    //Store config in logFile
-    logFile.write(config::configString.c_str());
-    logFile.flush();
+    printPreamble();
     
     if(config::SIMULATION);
         //openSimFile();
+}
+
+void Log::printPreamble(){
+    //Log date and time of compile
+    logPrintln(std::string("Code compiled on ") + __DATE__ + " at " + __TIME__);
+    
+    //Store config in logFile
+    logPrintln(config::configString.c_str());
+    flushSD();
 }
 
 //Opens config file, reads all the data and sends to Config, then closes file
@@ -66,9 +74,51 @@ void Log::openLogFile(){
         sPrintln(flightFileName.c_str());
         counter++;
     } while(SD.exists(flightFileName.c_str()));
-    logFile = SD.open(flightFileName.c_str(), FILE_WRITE);
-    if(logFile)
+    flightFile = SD.open(flightFileName.c_str(), FILE_WRITE);
+    if(flightFile)
         sPrintln(("Successfully opened " + flightFileName + " for logging").c_str());
     else
         sPrintln(("Could not open " + flightFileName + " for logging").c_str());
+}
+
+
+void Log::flushSD(){
+    flightFile.flush();
+}
+
+//Calls all the getters and updates logLine
+void Log::updateLogLine(){
+    for(int i = 0; i < logGetters.size(); i++){
+        logLine.at(i) = logGetters.at(i)();
+    }
+}
+
+//Writes logLine to SD card
+void Log::writeLogLine(){
+    std::string line = "";
+    for(std::string str : logLine){
+        line += str + ",";
+    }
+    logPrintln(line);
+}
+
+//Updates and writes logLine
+void Log::update(){
+    updateLogLine();
+    writeLogLine();
+}
+
+void Log::attachTag(std::string name, std::function<std::string()> stringGetter){
+    logLine.push_back(name);
+    logGetters.push_back(stringGetter);
+}
+
+//Prints single line in log, no \n needed in string
+void Log::logPrintln(std::string line){
+    flightFile.write(line.c_str());
+    flightFile.write("\n");
+    #if PRINT_LOG_TO_SERIAL
+        sPrint("LOG -- ");
+        sPrintln(line.c_str());
+    #endif
 }

@@ -1,6 +1,6 @@
 #include "UI.h"
 #include <Arduino.h>
-#include "globalSettings.h"
+#include "Log/print.h"
 #include "../hardwareMap.h"
 
 void UI::initialize(){

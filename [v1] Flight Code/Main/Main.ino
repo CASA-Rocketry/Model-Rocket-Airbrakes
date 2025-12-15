@@ -1,7 +1,7 @@
-#define SIMULATION false //false on real flight
+#define SIMULATION true //false on real flight
 #define BUZZER true
 #define SERVO true
-#define SERIAL false//true//false during flight
+#define SERIAL true//true//false during flight
 
 //Remove print statements pre-compilation if SERIAL is false
 #if SERIAL
