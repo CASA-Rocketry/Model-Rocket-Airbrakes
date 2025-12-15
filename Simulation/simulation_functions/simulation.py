@@ -9,6 +9,8 @@ def run_simulation(config, controller):
 
         print("Running simulation...")
 
+        rocket.draw()
+
         flight = Flight(
             rocket=rocket,
             environment=environment,

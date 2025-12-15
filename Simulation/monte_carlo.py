@@ -18,7 +18,6 @@ from controller import Control
 from simulation_functions.setup_environment import setup_environment
 from simulation_functions.setup_rocket import setup_rocket
 
-
 class CustomStochasticRocket(StochasticRocket):
     def __init__(self, rocket, controller_class, config, *args, **kwargs):
         super().__init__(rocket, *args, **kwargs)
@@ -82,6 +81,10 @@ class CustomStochasticRocket(StochasticRocket):
         modified_drag_curve = df.values.tolist()
 
         controller_instance = self.controller_class(self.config)
+
+        # Store controller instance on rocket for later access
+        new_rocket._controller_instance = controller_instance
+
         new_rocket.add_air_brakes(
             drag_coefficient_curve=modified_drag_curve,
             controller_function=controller_instance.controller,
@@ -145,39 +148,43 @@ def run_monte_carlo(config, num_simulations=100):
     def get_max_deployment(flight):
         """Extract max airbrake deployment from controller data"""
         try:
-            if not hasattr(flight.rocket, 'air_brakes') or len(flight.rocket.air_brakes) == 0:
-                return 0.0
-
-            airbrake_item = flight.rocket.air_brakes[0]
-            if isinstance(airbrake_item, tuple):
-                airbrake, _ = airbrake_item
-            else:
-                airbrake = airbrake_item
-
-            max_deployment = 0.0
-
-            # Try current deployment level
-            if hasattr(airbrake, 'deployment_level'):
-                current = float(airbrake.deployment_level) if airbrake.deployment_level is not None else 0.0
-                max_deployment = max(max_deployment, current)
-
-            # Try to access controller data
-            if hasattr(airbrake, 'controller_function') and hasattr(airbrake.controller_function, '__self__'):
-                controller_instance = airbrake.controller_function.__self__
+            # Access controller instance directly from rocket
+            if hasattr(flight.rocket, '_controller_instance'):
+                controller_instance = flight.rocket._controller_instance
                 if hasattr(controller_instance, 'data') and 'deployment' in controller_instance.data:
                     deployments = controller_instance.data['deployment']
                     if deployments:
                         valid_deployments = [d for d in deployments if isinstance(d, (int, float)) and not np.isnan(d)]
                         if valid_deployments:
-                            max_deployment = max(max_deployment, max(valid_deployments))
+                            return float(max(valid_deployments))
 
-            return float(max_deployment)
+            return 0.0
 
         except Exception as e:
+            print(f"Error in get_max_deployment: {e}")
             return 0.0
+
+    def get_deployment_timeseries(flight):
+        """Extract deployment time series from controller data"""
+        try:
+            # Access controller instance directly from rocket
+            if hasattr(flight.rocket, '_controller_instance'):
+                controller_instance = flight.rocket._controller_instance
+                if hasattr(controller_instance, 'data'):
+                    time_data = controller_instance.data.get('time', [])
+                    deployment_data = controller_instance.data.get('deployment', [])
+                    if time_data and deployment_data:
+                        return {'time': list(time_data), 'deployment': list(deployment_data)}
+
+            return {'time': [], 'deployment': []}
+
+        except Exception as e:
+            print(f"Error in get_deployment_timeseries: {e}")
+            return {'time': [], 'deployment': []}
 
     data_collector = {
         'max_airbrake_deployment': get_max_deployment,
+        'deployment_timeseries': get_deployment_timeseries,
     }
 
     # Create output directory for Monte Carlo files
@@ -210,7 +217,7 @@ def create_plot(monte_carlo, config):
     csv_data = {
         'Simulation': range(1, len(apogees_agl) + 1),
         'Apogee_AGL_m': apogees_agl,
-        'Error_m': apogees_agl - config.target_apogee + 1.5,
+        'Error_m': apogees_agl - config.target_apogee + config.apogee_offset,
     }
 
     # Extract stochastic input parameters from inputs_log
@@ -245,10 +252,12 @@ def create_plot(monte_carlo, config):
 
     # Apogee distribution with fixed bin width
     bin_width = 0.25  # meters
-    bin_edges = np.arange(config.target_apogee - 5, config.target_apogee + 5 + bin_width, bin_width)
+    bin_edges = np.arange(config.target_apogee - 5,
+                          config.target_apogee + 5 + bin_width,
+                          bin_width)
 
     ax.hist(apogees_agl, bins=bin_edges, edgecolor='black', alpha=0.7)
-    ax.axvline(config.target_apogee - 1.5, color='r', linestyle='--', linewidth=2, label='Target')
+    ax.axvline(config.target_apogee - config.apogee_offset, color='r', linestyle='--', linewidth=2, label='Target')
     ax.axvline(np.mean(apogees_agl), color='g', linestyle='--', linewidth=2, label='Mean')
     ax.set_xlabel('Apogee (m AGL)')
     ax.set_ylabel('Frequency')
@@ -257,15 +266,45 @@ def create_plot(monte_carlo, config):
     ax.grid(True, alpha=0.3)
 
     # Set fixed x-axis limits centered around target apogee
-    ax.set_xlim(config.target_apogee - 5, config.target_apogee + 5)
+    ax.set_xlim(config.target_apogee - 5 - config.apogee_offset, config.target_apogee + 5 - config.apogee_offset)
 
     plt.tight_layout()
     plot_path = output_dir / "monte_carlo_plots.png"
     plt.savefig(plot_path, dpi=150, bbox_inches='tight')
-    plt.close('all')
+    plt.close()
+
+    # Create deployment overlay plot
+    if 'deployment_timeseries' in monte_carlo.results:
+        fig_deployment, ax_deployment = plt.subplots(1, 1, figsize=(10, 6))
+
+        deployment_data = monte_carlo.results['deployment_timeseries']
+
+        # Plot each simulation's deployment curve
+        for i, sim_data in enumerate(deployment_data):
+            if sim_data and 'time' in sim_data and 'deployment' in sim_data:
+                time = sim_data['time']
+                deployment = sim_data['deployment']
+                if len(time) > 0 and len(deployment) > 0:
+                    ax_deployment.plot(time, deployment, alpha=0.3, linewidth=0.8, color='blue')
+
+        ax_deployment.set_xlabel('Time (s)')
+        ax_deployment.set_ylabel('Deployment (0-1)')
+        ax_deployment.set_title('Airbrake Deployment Over Time - All Monte Carlo Simulations')
+        ax_deployment.grid(True, alpha=0.3)
+        ax_deployment.set_ylim(-0.05, 1.05)
+
+        plt.tight_layout()
+        deployment_plot_path = output_dir / "monte_carlo_deployment_overlay.png"
+        plt.savefig(deployment_plot_path, dpi=150, bbox_inches='tight')
+        plt.close('all')
 
 
 if __name__ == "__main__":
     config = Config()
-    monte_carlo = run_monte_carlo(config=config, num_simulations=50)
+    monte_carlo = run_monte_carlo(config=config, num_simulations=1000)
     create_plot(monte_carlo, config)
+    std = np.std(monte_carlo.results['apogee'])
+    print(f"Standard deviation: {std} m")
+    average_apogee = sum(monte_carlo.results['apogee']) / len(monte_carlo.results['apogee'])
+    average_error = average_apogee - config.target_apogee + config.apogee_offset - config.env_elevation
+    print(f"Average error: {average_error} m")
