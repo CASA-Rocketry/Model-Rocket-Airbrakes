@@ -46,10 +46,6 @@ class ControllerOptimizerPID(ControllerBase):
             method='bounded'
         )
 
-        # Use error from predicted apogee with brake
-        error = error_w_brake
-
-        alpha = 0.2
         deployment_opt = result.x
 
         error = deployment_opt - self.last_deployment
