@@ -3,7 +3,7 @@
 
 class PhysicalIMU{
 private:    
-    Adafruit_BNO055 imu;
+    Adafruit_BNO055 bno;
     
 public: 
     PhysicalIMU();

@@ -21,6 +21,7 @@ void Rocket::readSensors(){
 void Rocket::initialize(){
     //altimeter->initialize();
     altimeter.initialize();
+    imu.initialize();
     UI::initialize();
 
 
