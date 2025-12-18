@@ -20,6 +20,7 @@ private:
     void updateLogLine();
 public:
     void initialize();
+    void test();
     bool hasCard();
 
     //Templated methods need to be defined in .h file
