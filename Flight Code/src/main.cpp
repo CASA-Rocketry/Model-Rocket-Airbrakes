@@ -16,7 +16,5 @@ void setup() {
 
 void loop() {
   rocket.update();
-  //sPrintln("Hello");
-  delay(100);
 }
 

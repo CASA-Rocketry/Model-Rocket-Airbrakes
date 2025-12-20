@@ -20,7 +20,6 @@ void PhysicalIMU::calibrate(){
         delay(100);
     } while(calibrationStatus != 3);
     sPrintln("Gyro calibration complete");
-    UI::setTone(5000, 500);
 
     //Magnetometer calibration wave around)
     sPrintln("Calibrating magnetometer");
@@ -29,9 +28,6 @@ void PhysicalIMU::calibrate(){
         delay(100);
     } while(calibrationStatus != 3);
     sPrintln("magnetometer calibration complete");
-    UI::setTone(5000, 500);
-    delay(1000);
-    UI::setTone(5000, 500);
 
     //Accelerometer calibration (move for each axis to sense earth)
     sPrintln("Calibrating accelerometer");
@@ -40,11 +36,6 @@ void PhysicalIMU::calibrate(){
     //     delay(100);
     // } while(calibrationStatus != 3);
     sPrintln("Accelerometer calibration complete");
-    UI::setTone(5000, 500);
-    delay(1000);
-    UI::setTone(5000, 500);
-    delay(1000);
-    UI::setTone(5000, 500);
 }
 
 PhysicalIMU::PhysicalIMU(){}

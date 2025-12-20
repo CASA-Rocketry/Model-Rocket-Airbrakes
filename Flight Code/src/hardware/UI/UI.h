@@ -1,15 +1,17 @@
 #pragma once
 
 class UI {
+private:
+     void playSong(int[], int, int, int);
 public:
-    static void initialize();
-    static bool getButton();
-    static void setTone(int, int);
-    static void stopTone();
-    static void setRed(int);
-    static void setBlue(int);
-    static void setGreen(int);
-    static void setColor(int, int, int);
-    static double measureVoltage();
-    static void altimeterLockout(int);
+    void initialize();
+    bool getButton();
+    void setTone(int, int);
+    void stopTone();
+    void setRed(int);
+    void setBlue(int);
+    void setGreen(int);
+    void setColor(int, int, int);
+    double measureVoltage();
+    void playRandomSong(int, int);
 };

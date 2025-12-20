@@ -11,12 +11,6 @@ void Airbrake::initialize(){
 }
 
 void Airbrake::test(){
-    //Warning beeps
-    for(int i = 0; i < 5; i++){
-        UI::setTone(500, 500);
-        delay(1000);
-    }
-
     //Slow pass
     for(double a = 0; a <= PI; a += PI/500){
         setDeployment(sin(a));

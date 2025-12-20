@@ -19,30 +19,18 @@ void Rocket::readSensors(){
 
 void Rocket::setup(){
     log.initialize(config);
-    UI::initialize();
+    ui.initialize();
     altimeter.initialize();
     imu.initialize();
     
     imu.calibrate();
     brake.test();
 
-    UI::altimeterLockout(config.ALTIMETER_LOCKOUT_SECONDS);
+    ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
     altimeter.calibrate();
     
 
     // addLogTags();
-
-    //Indicate successful initialization
-    UI::setTone(3000, 5000);
-    
-    //Light test
-    UI::setRed(1);
-    delay(1000);
-    UI::setGreen(1);
-    delay(1000);
-    UI::setBlue(1);
-    delay(1000);
-    UI::setColor(0, 0, 0);
 }
 
 void Rocket::addLogTags(){
@@ -64,7 +52,7 @@ void Rocket::addLogTags(){
 void Rocket::update(){
     readSensors();
     log.update();
-    if(UI::getButton()){
+    if(ui.getButton()){
         log.flushSD();
         sPrintln("Flushing SD");
     }
