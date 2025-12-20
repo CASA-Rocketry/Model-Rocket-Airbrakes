@@ -7,6 +7,7 @@
 #include <type_traits>
 
 void Log::initialize(){
+    sPrintln("Initializing log");
     pinMode(hardwareMap::SD_CD, INPUT);
 
     //Check card detect
@@ -30,6 +31,7 @@ void Log::initialize(){
     
     if(config::SIMULATION);
         //openSimFile();
+    sPrintln("Log initialized");
 }
 
 void Log::printPreamble(){

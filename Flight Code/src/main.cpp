@@ -11,7 +11,7 @@ void setup() {
           while(!Serial);
       #endif
   #endif
-  rocket.initialize();
+  rocket.setup();
 }
 
 void loop() {

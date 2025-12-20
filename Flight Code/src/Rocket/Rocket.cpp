@@ -17,15 +17,18 @@ void Rocket::readSensors(){
 }
 
 
-void Rocket::initialize(){
+void Rocket::setup(){
+    log.initialize();
+    UI::initialize();
     altimeter.initialize();
     imu.initialize();
-    UI::initialize();
-    log.initialize();
-
-    brake.test();
-    altimeter.calibrate();
+    
     imu.calibrate();
+    brake.test();
+
+    UI::altimeterLockout();
+    altimeter.calibrate();
+    
 
     // addLogTags();
 

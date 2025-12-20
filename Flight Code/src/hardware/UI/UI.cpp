@@ -4,6 +4,7 @@
 #include "../hardwareMap.h"
 #include "constants.h"
 #include "songs.hpp"
+#include "config.hpp"
 
 using namespace hardwareMap;
 
@@ -20,6 +21,10 @@ void UI::initialize(){
     digitalWrite(hardwareMap::BATT_TRANS, LOW);
 
     sPrintln("UI Initialized");
+}
+
+void UI::altimeterLockout(){
+    playRandomSong(config::ALTIMETER_LOCKOUT_SECONDS);
 }
 
 //Returns true for pressed, false for not pressed

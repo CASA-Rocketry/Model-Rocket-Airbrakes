@@ -3,9 +3,11 @@
 #include "../UI/UI.h"
 
 void PhysicalIMU::initialize(){
+    sPrintln("Initializing IMU");
     if(!bno.begin()){
         sPrintln("Error initializing IMU");
     }
+    sPrintln("IMU Initialized");
 }
 
 void PhysicalIMU::calibrate(){

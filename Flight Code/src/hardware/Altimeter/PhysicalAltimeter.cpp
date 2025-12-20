@@ -4,10 +4,12 @@
 
 
 void PhysicalAltimeter::initialize(){
+    sPrintln("Initializing altimeter");
     if(!bmp.begin_I2C())
         Serial.println("ERROR initializing Altimeter"); 
     else
         bmp.setOutputDataRate(BMP3_ODR_200_HZ); 
+    sPrintln("Altimeter initialized");
 }
 
 //Updates temp and pressure data simulteneously 
