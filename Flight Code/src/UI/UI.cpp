@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include "Log/print.h"
 #include "../hardwareMap.h"
+#include "constants.h"
 
 void UI::initialize(){
     pinMode(hardwareMap::LED_RED, OUTPUT);
@@ -10,6 +11,11 @@ void UI::initialize(){
 
     pinMode(hardwareMap::BUTTON, INPUT);
     pinMode(hardwareMap::BUZZER, OUTPUT);
+
+    pinMode(hardwareMap::BATT_TRANS, OUTPUT);
+    pinMode(hardwareMap::BATT_ANALOG, INPUT_DISABLE);
+    digitalWrite(hardwareMap::BATT_TRANS, LOW);
+
     sPrintln("UI Initialized");
 }
 
@@ -39,4 +45,13 @@ void UI::setColor(int r, int g, int b){
     setRed(r);
     setGreen(g);
     setBlue(b);
+}
+
+double UI::measureVoltage(){
+    digitalWrite(hardwareMap::BATT_TRANS, HIGH);
+    double rawVoltage = analogRead(hardwareMap::BATT_ANALOG);
+    sPrintln(rawVoltage * constants::electrical::BATT_VOLTAGE_SCALER);
+    
+    //digitalWrite(hardwareMap::BATT_TRANS, LOW); 
+    return 0;
 }

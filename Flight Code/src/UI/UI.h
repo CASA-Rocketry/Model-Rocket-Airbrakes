@@ -1,3 +1,5 @@
+#pragma once
+
 class UI {
 public:
     static void initialize();
@@ -7,4 +9,5 @@ public:
     static void setBlue(int);
     static void setGreen(int);
     static void setColor(int, int, int);
+    static double measureVoltage();
 };

@@ -15,4 +15,7 @@ namespace hardwareMap{
     const int PWM3 = 7;
     const int PWM4 = 8;
     const int PWM5 = 9;
+
+    const int BATT_TRANS = 15;
+    const int BATT_ANALOG = 14;
 };

@@ -20,15 +20,23 @@ void Rocket::readSensors(){
 
 void Rocket::initialize(){
     //altimeter->initialize();
-    altimeter.initialize();
-    imu.initialize();
+    //altimeter.initialize();
+    //imu.initialize();
     UI::initialize();
-
+    
+    sPrintln("initialize");
+    while(true){
+        UI::measureVoltage();
+        sPrintln("test");
+        delay(500);
+    }
+    // while(true)
+    //     delay(1000);
 
     
     // brake.test();
     log.initialize();
-    addLogTags();
+    // addLogTags();
 
     //Indicate successful initialization
     UI::setTone(3000, 5000);

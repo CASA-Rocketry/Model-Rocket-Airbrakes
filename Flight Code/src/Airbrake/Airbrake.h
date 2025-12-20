@@ -13,4 +13,5 @@ public:
     void open();
     double getCD();
     void setCD(double);
+    static double getCD(double);
 };

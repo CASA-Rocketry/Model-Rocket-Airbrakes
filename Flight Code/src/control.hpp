@@ -14,15 +14,15 @@ double getApogee(double y, double v, double cd){
 //Computes 
 double computeDeployment(double y, double v){
     //Check bounds 
-    if(getApogee(y, v, Airbrake::computeCD(0)) < config::TARGET_APOGEE_METERS)
+    if(getApogee(y, v, Airbrake::getCD(0)) < config::TARGET_APOGEE_METERS)
         return 0;
-    else if(getApogee(y, v, Airbrake::computeCD(1)) > config::TARGET_APOGEE_METERS)
+    else if(getApogee(y, v, Airbrake::getCD(1)) > config::TARGET_APOGEE_METERS)
         return 1;
 
     double addition, deployment = 0;
     for(int digits = 1; digits <= 6; digits++){
         addition = 1 >> digits; 
-        if(getApogee(y, v, Airbrake::computeCD(deployment + addition)) > config::TARGET_APOGEE_METERS)
+        if(getApogee(y, v, Airbrake::getCD(deployment + addition)) > config::TARGET_APOGEE_METERS)
             deployment += addition;
     }
 }
