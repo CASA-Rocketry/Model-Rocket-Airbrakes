@@ -3,8 +3,12 @@
 #include "Log/print.h"
 #include "../hardwareMap.h"
 #include "constants.h"
+#include "songs.hpp"
+
+using namespace hardwareMap;
 
 void UI::initialize(){
+    sPrintln("Initializing UI");
     pinMode(hardwareMap::LED_RED, OUTPUT);
     pinMode(hardwareMap::LED_GREEN, OUTPUT);
     pinMode(hardwareMap::LED_BLUE, OUTPUT);
@@ -13,7 +17,6 @@ void UI::initialize(){
     pinMode(hardwareMap::BUZZER, OUTPUT);
 
     pinMode(hardwareMap::BATT_TRANS, OUTPUT);
-    pinMode(hardwareMap::BATT_ANALOG, INPUT_DISABLE);
     digitalWrite(hardwareMap::BATT_TRANS, LOW);
 
     sPrintln("UI Initialized");
@@ -45,6 +48,10 @@ void UI::setColor(int r, int g, int b){
     setRed(r);
     setGreen(g);
     setBlue(b);
+}
+
+void UI::stopTone(){
+    noTone(hardwareMap::BUZZER);
 }
 
 double UI::measureVoltage(){

@@ -18,4 +18,6 @@ namespace hardwareMap{
 
     const int BATT_TRANS = 15;
     const int BATT_ANALOG = 14;
+
+    const int RAND_FLOATING = 24; //Exposed pad on teensy
 };
