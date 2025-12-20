@@ -6,6 +6,9 @@ void PhysicalIMU::initialize(){
     if(!bno.begin()){
         sPrintln("Error initializing IMU");
     }
+}
+
+void PhysicalIMU::calibrate(){
     uint8_t calibrationStatus, otherStatus;
 
     //Gyro calibration (set still)

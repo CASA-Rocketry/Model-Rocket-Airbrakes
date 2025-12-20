@@ -4,9 +4,10 @@
 #include <Arduino.h>
 #include "constants.h"
 
-Airbrake::Airbrake(){
+
+void Airbrake::initialize(){
     servo.attach(hardwareMap::PWM5);
-    setDeployment(0);
+    close();
 }
 
 void Airbrake::test(){

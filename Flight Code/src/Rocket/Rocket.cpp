@@ -14,28 +14,19 @@ Rocket::~Rocket(){
 void Rocket::readSensors(){
     altimeter.readValues();
     imu.readAndCalculatePitch();
-    //sPrintln(altimeter->getAltitude());
 }
 
 
 void Rocket::initialize(){
-    //altimeter->initialize();
-    //altimeter.initialize();
-    //imu.initialize();
+    altimeter.initialize();
+    imu.initialize();
     UI::initialize();
-    
-    sPrintln("initialize");
-    while(true){
-        UI::measureVoltage();
-        sPrintln("test");
-        delay(500);
-    }
-    // while(true)
-    //     delay(1000);
-
-    
-    // brake.test();
     log.initialize();
+
+    brake.test();
+    altimeter.calibrate();
+    imu.calibrate();
+
     // addLogTags();
 
     //Indicate successful initialization
@@ -49,8 +40,6 @@ void Rocket::initialize(){
     UI::setBlue(1);
     delay(1000);
     UI::setColor(0, 0, 0);
-
-    altimeter.calibrate();
 }
 
 void Rocket::addLogTags(){

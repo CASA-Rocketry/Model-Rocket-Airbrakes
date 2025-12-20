@@ -6,8 +6,8 @@ private:
     float deployment;
 
 public:
-    Airbrake();
     void test();
+    void initialize();
     void setDeployment(double);
     void close();
     void open();

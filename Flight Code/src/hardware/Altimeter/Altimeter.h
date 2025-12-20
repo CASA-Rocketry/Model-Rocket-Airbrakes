@@ -3,11 +3,9 @@
 //Abstract class to access physical and simulated altimeters
 class Altimeter {
 protected:
-    //double altitude, temperature;
+    
 public:
     double altitude, temperature;
-    double getAltitude() {return altitude;}
-    double getTemperature() {return temperature;}
     virtual void readValues();
     virtual void initialize();
 };
