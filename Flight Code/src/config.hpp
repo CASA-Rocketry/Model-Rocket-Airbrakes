@@ -6,7 +6,7 @@
 #include "Log/print.h"
 
 namespace config{
-    const int CONFIG_VALUES = 19;
+    static const int CONFIG_VALUES = 19;
     std::string configString; //stores raw string before configuring
 
     //Rocket Kinematics 

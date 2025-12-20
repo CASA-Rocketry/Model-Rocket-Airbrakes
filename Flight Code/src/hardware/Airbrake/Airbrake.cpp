@@ -2,7 +2,7 @@
 #include "../hardwareMap.h"
 #include "../UI/UI.h"
 #include <Arduino.h>
-#include "../constants.h"
+#include "constants.h"
 
 Airbrake::Airbrake(){
     servo.attach(hardwareMap::PWM5);

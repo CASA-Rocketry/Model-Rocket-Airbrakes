@@ -1,7 +1,7 @@
-#include "Altimeter/Altimeter.h"
-#include "Airbrake/Airbrake.h"
+#include "hardware/Altimeter/Altimeter.h"
+#include "hardware/Airbrake/Airbrake.h"
 #include "Log/Log.h"
-#include "IMU/PhysicalIMU.h"
+#include "hardware/IMU/PhysicalIMU.h"
 
 class Rocket {
 private:

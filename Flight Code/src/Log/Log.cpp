@@ -1,9 +1,9 @@
 #include "Log.h"
 #include "print.h"
-#include "../hardwareMap.h"
+#include "hardware/hardwareMap.h"
 #include <Arduino.h>
 #include <string>
-#include "../config.h"
+#include "../config.hpp"
 #include <type_traits>
 
 void Log::initialize(){

@@ -1,6 +1,6 @@
-#include "config.h"
+#include "config.hpp"
 #include "constants.h"
-#include "Airbrake/Airbrake.h"
+#include "hardware/Airbrake/Airbrake.h"
 
 //Computes apogee from given altitude, velocity, and cd
 //The rest of the constants are pulled from the config

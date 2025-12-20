@@ -1,6 +1,6 @@
 #include <SPI.h>
 #include <SD.h>
-#include "../hardwareMap.h"
+#include "hardware/hardwareMap.h"
 #include <Arduino.h>
 #include <string>
 #include <vector>

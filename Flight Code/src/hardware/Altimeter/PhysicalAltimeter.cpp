@@ -14,18 +14,19 @@ void PhysicalAltimeter::initialize(){
 
 //Updates temp and pressure data simulteneously 
 void PhysicalAltimeter::readValues(){
-    altitude = bmp.readAltitude(SEA_LEVEL_PRESSURE) - altitudeOffset;
+    altitude = bmp.readAltitude(constants::physics::SEA_LEVEL_PRESSURE) - altitudeOffset;
     temperature = bmp.temperature;
 }
 
 void PhysicalAltimeter::calibrate(){
     double sum = 0;
     altitudeOffset = 0; //get raw alt values
+    const double CALIBRATION_POINTS = 100;
 
     for(int i = 0; i < CALIBRATION_POINTS; i++){
         readValues();
         sum += altitude;
-        delay(CALIBRATION_DELAY);
+        delay(50);
     }
     altitudeOffset = sum / CALIBRATION_POINTS;
     sPrint("Calibration point: ");
