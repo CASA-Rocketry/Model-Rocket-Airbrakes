@@ -3,10 +3,10 @@
 #include "hardware/hardwareMap.h"
 #include <Arduino.h>
 #include <string>
-#include "../config.hpp"
+#include "Config.hpp"
 #include <type_traits>
 
-void Log::initialize(){
+void Log::initialize(Config& config){
     sPrintln("Initializing log");
     pinMode(hardwareMap::SD_CD, INPUT);
 
@@ -24,27 +24,27 @@ void Log::initialize(){
     }
     sPrintln("Able to read SD");
 
-    readConfig();
-    openLogFile();
+    readConfig(config);
+    openLogFile(config.LOG_NAME);
 
-    printPreamble();
+    printPreamble(config.configString);
     
-    if(config::SIMULATION);
+    if(config.SIMULATION);
         //openSimFile();
     sPrintln("Log initialized");
 }
 
-void Log::printPreamble(){
+void Log::printPreamble(std::string configString){
     //Log date and time of compile
     logPrintln(std::string("Code compiled on ") + __DATE__ + " at " + __TIME__);
     
     //Store config in logFile
-    logPrintln(config::configString.c_str());
+    logPrintln(configString.c_str());
     flushSD();
 }
 
 //Opens config file, reads all the data and sends to Config, then closes file
-void Log::readConfig(){
+void Log::readConfig(Config& config){
     configFile = SD.open("config.csv", FILE_READ);
         std::string configString;
         if(configFile){
@@ -55,7 +55,7 @@ void Log::readConfig(){
                 configString += newChar; //Add next character
             }
             sPrintln(configString.c_str());
-            config::configureConstants(configString);
+            config.configureConstants(configString);
         } else {
             sPrintln("Config file not found");
         }
@@ -66,8 +66,7 @@ bool Log::hasCard(){
     return digitalRead(hardwareMap::SD_CD) == LOW; //grounded when card in
 }
 
-void Log::openLogFile(){
-    std::string baseName = config::LOG_NAME;
+void Log::openLogFile(std::string baseName){
     sPrintln(baseName.c_str());
     std::string flightFileName;
     int counter = 0;

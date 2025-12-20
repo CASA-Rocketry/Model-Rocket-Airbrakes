@@ -4,7 +4,7 @@
 #include "../hardwareMap.h"
 #include "constants.h"
 #include "songs.hpp"
-#include "config.hpp"
+#include "Config.hpp"
 
 using namespace hardwareMap;
 
@@ -23,8 +23,8 @@ void UI::initialize(){
     sPrintln("UI Initialized");
 }
 
-void UI::altimeterLockout(){
-    playRandomSong(config::ALTIMETER_LOCKOUT_SECONDS);
+void UI::altimeterLockout(int seconds){
+    playRandomSong(seconds);
 }
 
 //Returns true for pressed, false for not pressed

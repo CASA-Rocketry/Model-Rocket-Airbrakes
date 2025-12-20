@@ -1,12 +1,17 @@
 //File for holding the constants that are changed in onboard config file
 //Include unit for clarity of variable
-#ifndef CONFIG
-#define CONFIG
+#pragma once
 
 #include <string>
 #include "Log/print.h"
 
-namespace config{
+class Config{
+private:
+    bool getBool(std::string);
+    std::string cleanString(std::string);
+    void fillConfig(std::string[]);
+    void parseConfig(std::string, std::string[]);
+public:
     const int CONFIG_VALUES = 19;
     std::string configString; //stores raw string before configuring
 
@@ -40,16 +45,10 @@ namespace config{
     //State transition thresholds
     double LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED;
     double COAST_LOCKOUT_SECONDS;
-    double ALTIMETER_LOCKOUT_SECONDS;
+    int ALTIMETER_LOCKOUT_SECONDS;
     double TARGET_APOGEE_METERS;
     double KP; //Multiplied in addition to using dt
 
-    bool getBool(std::string);
-    std::string cleanString(std::string);
-    void fillConfig(std::string[]);
-    void parseConfig(std::string, std::string[]);
     void configureConstants(std::string);
 };
-
-#endif
 

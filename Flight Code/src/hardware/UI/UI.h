@@ -11,5 +11,5 @@ public:
     static void setGreen(int);
     static void setColor(int, int, int);
     static double measureVoltage();
-    static void altimeterLockout();
+    static void altimeterLockout(int);
 };

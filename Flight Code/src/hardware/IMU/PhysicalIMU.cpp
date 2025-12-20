@@ -35,10 +35,10 @@ void PhysicalIMU::calibrate(){
 
     //Accelerometer calibration (move for each axis to sense earth)
     sPrintln("Calibrating accelerometer");
-    do{
-        bno.getCalibration(&otherStatus, &otherStatus, &calibrationStatus, &otherStatus);
-        delay(100);
-    } while(calibrationStatus != 3);
+    // do{
+    //     bno.getCalibration(&otherStatus, &otherStatus, &calibrationStatus, &otherStatus);
+    //     delay(100);
+    // } while(calibrationStatus != 3);
     sPrintln("Accelerometer calibration complete");
     UI::setTone(5000, 500);
     delay(1000);

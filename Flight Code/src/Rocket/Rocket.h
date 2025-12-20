@@ -2,9 +2,11 @@
 #include "hardware/Airbrake/Airbrake.h"
 #include "Log/Log.h"
 #include "hardware/IMU/PhysicalIMU.h"
+#include "Config.hpp"
 
 class Rocket {
 private:
+    Config config;
     PhysicalAltimeter altimeter;
     Log log;
     PhysicalIMU imu;

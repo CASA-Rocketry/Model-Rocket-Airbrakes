@@ -354,7 +354,6 @@ void playRandomSong(int totalSeconds){
             break;
         case 4: 
             playSong(wiiTheme, sizeof(wiiTheme) / sizeof(wiiTheme[0]) / 2, 114, totalSeconds);
-            break;
-        
+            break;  
     }
 }

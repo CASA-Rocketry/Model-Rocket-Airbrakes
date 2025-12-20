@@ -18,7 +18,7 @@ void Rocket::readSensors(){
 
 
 void Rocket::setup(){
-    log.initialize();
+    log.initialize(config);
     UI::initialize();
     altimeter.initialize();
     imu.initialize();
@@ -26,7 +26,7 @@ void Rocket::setup(){
     imu.calibrate();
     brake.test();
 
-    UI::altimeterLockout();
+    UI::altimeterLockout(config.ALTIMETER_LOCKOUT_SECONDS);
     altimeter.calibrate();
     
 

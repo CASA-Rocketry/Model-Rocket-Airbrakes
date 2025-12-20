@@ -1,7 +1,7 @@
-#include "config.hpp"
+#include "Config.hpp"
 
 //Stores values to config from configValues
-void config::fillConfig(std::string configValues[]){     
+void Config::fillConfig(std::string configValues[]){     
     SIMULATION = getBool(configValues[0]);
     AIRBRAKES_ENABLED = getBool(configValues[1]);
 
@@ -30,7 +30,7 @@ void config::fillConfig(std::string configValues[]){
 
 //Accepts config in string form and adds values to configValues
 //TODO: fix this bad indexing
-void config::parseConfig(std::string config, std::string configValues[]){
+void Config::parseConfig(std::string config, std::string configValues[]){
     int startIndex, breakIndex = -1;
         int constantsFilled = 0;
         
@@ -52,23 +52,22 @@ void config::parseConfig(std::string config, std::string configValues[]){
 }
 
 
-void config::configureConstants(std::string config){
+void Config::configureConstants(std::string config){
     configString = config;
     std::string configValues[CONFIG_VALUES] = {};
     parseConfig(config, configValues);
     fillConfig(configValues);
-    sPrintln(KP);
 }
 
 //Converts F/T to false/true
-bool config::getBool(std::string str){
+bool Config::getBool(std::string str){
     if(str.compare("F") == 0)
         return false;
     return true;
 }
 
 //Removes unwanted (\n and \r) chartacters from string that may be left over
-std::string cleanString(std::string str){
+std::string Config::cleanString(std::string str){
     while(str.find_first_of("\r\n") != std::string::npos){
         str.erase(str.find_first_of("\r\n"), 1);
     }

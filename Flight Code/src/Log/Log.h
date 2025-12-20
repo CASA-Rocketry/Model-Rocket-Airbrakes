@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <string>
 #include <vector>
+#include "Config.hpp"
 #pragma once
 
 
@@ -14,12 +15,12 @@ private:
     std::vector<std::string> logLine;
     std::vector<std::function<std::string()>> logGetters;
     int valuesAttached = 0; //tracks number of logLine entries that have been attached
-    void readConfig();
-    void openLogFile();
+    void readConfig(Config&);
+    void openLogFile(std::string);
     void openSimFile();
     void updateLogLine();
 public:
-    void initialize();
+    void initialize(Config&);
     void test();
     bool hasCard();
 
@@ -43,6 +44,6 @@ public:
     void update();
     void flushSD();
     void writeLogLine(); //Could be private, but used once publically to write headers
-    void printPreamble();
+    void printPreamble(std::string);
     void logPrintln(std::string);
 };
