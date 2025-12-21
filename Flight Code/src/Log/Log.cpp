@@ -5,6 +5,7 @@
 #include <string>
 #include "Config.hpp"
 #include <type_traits>
+#include "exceptions.h"
 
 void Log::initialize(Config& config){
     sPrintln("Initializing log");
@@ -15,6 +16,8 @@ void Log::initialize(Config& config){
         sPrintln("Please insert card");
         delay(2000);
     }
+    if(!hasCard())
+        //throw(SetupException("No SD card detected", 1));
     sPrintln("Card detected");
 
     //Start SPI communications with SD card
@@ -89,7 +92,7 @@ void Log::flushSD(){
 
 //Calls all the getters and updates logLine
 void Log::updateLogLine(){
-    for(int i = 0; i < logGetters.size(); i++){
+    for(size_t i = 0; i < logGetters.size(); i++){
         logLine.at(i) = logGetters.at(i)();
     }
 }

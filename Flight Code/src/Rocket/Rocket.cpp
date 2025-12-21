@@ -2,6 +2,8 @@
 #include "hardware/UI/UI.h"
 #include "Log/Log.h"
 #include "Log/print.h"
+#include "exceptions.h"
+#include "control.h"
 
 
 Rocket::Rocket(){
@@ -22,7 +24,7 @@ void Rocket::setup(){
     ui.initialize();
     altimeter.initialize();
     imu.initialize();
-    
+
     imu.calibrate();
     brake.test();
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "exceptions.h"
 
 class UI {
 private:
@@ -14,4 +15,5 @@ public:
     void setColor(int, int, int);
     double measureVoltage();
     void playRandomSong(int, int);
+    void startError(SetupException);
 };
