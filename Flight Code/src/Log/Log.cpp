@@ -1,11 +1,10 @@
 #include "Log.h"
-#include "print.h"
-#include "hardware/hardwareMap.h"
+#include "../util/print.h"
+#include "../hardware/hardwareMap.h"
 #include <Arduino.h>
 #include <string>
-#include "Config.hpp"
+#include "../util/Config.hpp"
 #include <type_traits>
-#include "exceptions.h"
 
 void Log::initialize(Config& config){
     sPrintln("Initializing log");

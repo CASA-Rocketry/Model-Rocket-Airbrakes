@@ -3,7 +3,7 @@
 #pragma once
 
 #include <string>
-#include "Log/print.h"
+#include "print.h"
 
 class Config{
 private:

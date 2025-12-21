@@ -1,10 +1,10 @@
 #include "UI.h"
 #include <Arduino.h>
-#include "Log/print.h"
+#include "../../util/print.h"
 #include "../hardwareMap.h"
-#include "constants.h"
+#include "../../util/constants.h"
 #include "songs.h"
-#include "Config.hpp"
+#include "../../util/Config.hpp"
 
 using namespace hardwareMap;
 
@@ -29,29 +29,29 @@ bool UI::getButton(){
     return digitalRead(hardwareMap::BUTTON) == HIGH;
 }
 
-void UI::startError(SetupException e){
-    sPrint("Fatal ERROR ------ ");
-    sPrintln(e.printMessage.c_str());
-    setRed(HIGH);
-    while(true){
-        //Single long beep
-        setTone(500, 2000);
-        setBlue(HIGH);
-        delay(2000);
-        setBlue(LOW);
-        delay(1000);
+// void UI::startError(SetupException e){
+//     sPrint("Fatal ERROR ------ ");
+//     sPrintln(e.printMessage.c_str());
+//     setRed(HIGH);
+//     while(true){
+//         //Single long beep
+//         setTone(500, 2000);
+//         setBlue(HIGH);
+//         delay(2000);
+//         setBlue(LOW);
+//         delay(1000);
 
-        //e.code shorter beeps
-        for(int i = 0; i < e.code; i++){
-            setTone(500, 500);
-            setBlue(HIGH);
-            delay(500);
-            setBlue(LOW);
-            delay(500);
-        }
-        delay(2000);
-    }
-}
+//         //e.code shorter beeps
+//         for(int i = 0; i < e.code; i++){
+//             setTone(500, 500);
+//             setBlue(HIGH);
+//             delay(500);
+//             setBlue(LOW);
+//             delay(500);
+//         }
+//         delay(2000);
+//     }
+// }
 
 void UI::setTone(int frequency, int duration){
     tone(hardwareMap::BUZZER, frequency, duration);

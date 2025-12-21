@@ -1,4 +1,4 @@
-#include "Config.hpp"
+#include "../util/Config.hpp"
 
 namespace control{
     double getApogee(double, double, double, Config&);

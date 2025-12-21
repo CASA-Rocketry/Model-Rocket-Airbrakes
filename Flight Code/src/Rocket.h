@@ -2,7 +2,7 @@
 #include "hardware/Airbrake/Airbrake.h"
 #include "Log/Log.h"
 #include "hardware/IMU/PhysicalIMU.h"
-#include "Config.hpp"
+#include "util/Config.hpp"
 #include "hardware/UI/UI.h"
 
 class Rocket {

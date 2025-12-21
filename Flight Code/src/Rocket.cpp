@@ -1,9 +1,8 @@
 #include "Rocket.h"
 #include "hardware/UI/UI.h"
 #include "Log/Log.h"
-#include "Log/print.h"
-#include "exceptions.h"
-#include "control.h"
+#include "util/print.h"
+#include "control/control.h"
 
 
 Rocket::Rocket(){

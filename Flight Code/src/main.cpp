@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include "Rocket/Rocket.h"
-#include "Log/print.h"
+#include "Rocket.h"
+#include "util/print.h"
 
 Rocket rocket;
 

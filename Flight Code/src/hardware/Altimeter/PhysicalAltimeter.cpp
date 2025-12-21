@@ -1,6 +1,6 @@
 #include "Altimeter.h"
-#include "constants.h"
-#include "Log/print.h"
+#include "../../util/constants.h"
+#include "../../util/print.h"
 
 
 void PhysicalAltimeter::initialize(){
