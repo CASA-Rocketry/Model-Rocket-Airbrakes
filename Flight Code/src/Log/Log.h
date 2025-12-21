@@ -20,7 +20,7 @@ private:
     void openSimFile();
     void updateLogLine();
 public:
-    void initialize(Config&, UI&);
+    void initialize(UI&);
     void test();
     bool hasCard();
     void readConfig(Config&, UI&);

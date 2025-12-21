@@ -3,14 +3,21 @@
 #include "../UI/UI.h"
 #include <Arduino.h>
 #include "../../util/constants.h"
+#include "../../util/print.h"
 
+Airbrake::Airbrake(){
+    enabled = false; // default to not enabled
+}
 
 void Airbrake::initialize(){
+    sPrintln("Initializing Brakes");
     servo.attach(hardwareMap::PWM5);
     close();
+    sPrintln("Brakes initialized");
 }
 
 void Airbrake::test(){
+    sPrintln("Starting airbrake test");
     //Slow pass
     for(double a = 0; a <= PI; a += PI/500){
         setDeployment(sin(a));
@@ -22,20 +29,32 @@ void Airbrake::test(){
     open();
     delay(1000);
     close(); 
+    sPrintln("Airbrake test complete");
 }
 
 //Sets servo from 0 to 1 and updates deployment
 void Airbrake::setDeployment(double val){
-    //Clamp val 
-    if(val > 1) 
-        val = 1;
-    else if (val < 0)
-        val = 0;
+    if(!enabled) //0 if disabled
+        servo.write(0);
+    else {
+        //Clamp val 
+        if(val > 1) 
+            val = 1;
+        else if (val < 0)
+            val = 0;
 
-    deployment = val;
-    
-    //TODO: add mapping
-    servo.write(val * constants::airbrake::MAX_DEPLOYMENT_DEGREES);
+        deployment = val;
+        
+        servo.write(val * constants::airbrake::MAX_DEPLOYMENT_DEGREES);
+    }
+}
+
+void Airbrake::enable(){
+    enabled = true;
+}
+
+void Airbrake::disable(){
+    enabled = false;
 }
 
 void Airbrake::close(){

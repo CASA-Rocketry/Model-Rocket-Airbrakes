@@ -91,7 +91,7 @@
 
 //Negative durations for dotted notes
 namespace songs{
-    inline int starWarsTheme[] = {
+    int starWarsTheme[] = {
         NOTE_AS4,8, NOTE_AS4,8, NOTE_AS4,8,//1
         NOTE_F5,2, NOTE_C6,2,
         NOTE_AS5,8, NOTE_A5,8, NOTE_G5,8, NOTE_F6,2, NOTE_C6,4,  

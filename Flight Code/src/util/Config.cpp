@@ -1,12 +1,14 @@
 #include "Config.hpp"
+#include "print.h"
 
 //Stores values to config from configValues
 void Config::fillConfig(std::string configValues[]){     
     SIMULATION = getBool(configValues[0]);
+    sPrintln("Simulation: " + SIMULATION);
     AIRBRAKES_ENABLED = getBool(configValues[1]);
 
-    LOG_NAME = cleanString(configValues[2]);
-    SIM_NAME = cleanString(configValues[3]);
+    LOG_NAME = configValues[2];
+    SIM_NAME = configValues[3];
 
     BURNOUT_MASS_KG = std::stod(configValues[4]);
     AIR_DENSITY_KG_PER_METERS_CUBED = std::stod(configValues[5]);
@@ -28,6 +30,28 @@ void Config::fillConfig(std::string configValues[]){
     ALTIMETER_LOCKOUT_SECONDS = std::stod(configValues[18]);
 }
 
+//Prints out each of the config values to check they were stored properly
+void Config::printCheck(){
+    printTag("Simulation Mode (T/F)", SIMULATION);
+    printTag("Airbrakes Enabled (T/F)", AIRBRAKES_ENABLED);
+    printTag("Log File Name (max 7 chars uppercase)", LOG_NAME.c_str());
+    printTag("Sim File Name (if applicable)", SIM_NAME.c_str());
+    printTag("Burnout Mass (kg)", BURNOUT_MASS_KG);
+    printTag("Air Density (kg/m^3)", AIR_DENSITY_KG_PER_METERS_CUBED);
+    printTag("Rocket CD", ROCKET_CD);
+    printTag("Airbrake CD", AIRBRAKE_CD_FULL_DEPLOYMENT);
+    printTag("Rocket area (m^2)", ROCKET_AREA_METERS_SQUARED);
+    printTag("KF Model Y STD", MODEL_STD_Y);
+    printTag("KF Model V STD", MODEL_STD_V);
+    printTag("KF Model A STD", MODEL_STD_A);
+    printTag("KF Measurement Y STD", MEASUREMENT_STD_Y);
+    printTag("KF Measurement A STD", MEASUREMENT_STD_A);
+    printTag("Target Apogee (m)", TARGET_APOGEE_METERS);
+    printTag("Launch Acceleration (m/s^2)", LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED);
+    printTag("Coast lockout (s)", COAST_LOCKOUT_SECONDS);
+    printTag("Altimeter lockout (s)", ALTIMETER_LOCKOUT_SECONDS);
+}
+
 //Accepts config in string form and adds values to configValues
 //TODO: fix this bad indexing
 void Config::parseConfig(std::string config, std::string configValues[]){
@@ -42,7 +66,7 @@ void Config::parseConfig(std::string config, std::string configValues[]){
                 breakIndex = config.find_first_of('\n', breakIndex + 1);
                 entry = config.substr(startIndex + 1, breakIndex - startIndex - 1);
             }
-            configValues[constantsFilled] = entry;
+            configValues[constantsFilled] = cleanString(entry);
             constantsFilled++;
         }
 

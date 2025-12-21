@@ -48,7 +48,7 @@ public:
     int ALTIMETER_LOCKOUT_SECONDS;
     double TARGET_APOGEE_METERS;
     double KP; //Multiplied in addition to using dt
-
+    void printCheck();
     void configureConstants(std::string);
 };
 

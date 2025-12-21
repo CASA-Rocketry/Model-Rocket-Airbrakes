@@ -116,7 +116,6 @@ void UI::playRandomSong(int totalSeconds, int seed){
     //Choose song number
     std::srand(seed);
     int songNumber = std::rand() % 5; 
-
     switch(songNumber){
         case 0:
             playSong(songs::hedwigsTheme, sizeof(songs::hedwigsTheme) / sizeof(songs::hedwigsTheme[0]) / 2, 144, totalSeconds);

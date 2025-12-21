@@ -13,8 +13,8 @@ public:
 class PhysicalAltimeter : public Altimeter {
 private:
     Adafruit_BMP3XX bmp;
-    double altitudeOffset;
 public:
+    double altitudeOffset;
     void calibrate();
     void readValues() override;
     void initialize() override;

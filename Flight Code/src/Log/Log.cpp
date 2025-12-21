@@ -7,7 +7,7 @@
 #include "../hardware/UI/UI.h"
 #include <type_traits>
 
-void Log::initialize(Config& config, UI& ui){
+void Log::initialize(UI& ui){
     sPrintln("Initializing log");
     pinMode(hardwareMap::SD_CD, INPUT);
 
@@ -29,12 +29,9 @@ void Log::initialize(Config& config, UI& ui){
 void Log::printPreamble(std::string configString){
     //Log date and time of compile
     logPrintln(std::string("Code compiled on ") + __DATE__ + " at " + __TIME__);
-    
-    //Store config in logFile
-    sPrintln("Configuration ------------------");
     logPrintln(configString.c_str());
-    sPrintln(configString.c_str());
-    sPrintln("--------------------------------");
+    //Store config in logFile
+    
     //Grab optional user notes in necessary
     sPrint("Add any addition notes (max 1 line): ");
     #if SERIAL_ENABLED
@@ -117,8 +114,8 @@ void Log::attachTag(std::string name, std::function<std::string()> stringGetter)
 void Log::logPrintln(std::string line){
     flightFile.write(line.c_str());
     flightFile.write("\n");
-    // #if PRINT_LOG_TO_SERIAL
-    //     sPrint("LOG -- ");
-    //     sPrintln(line.c_str());
-    // #endif
+    #if PRINT_IN_FLIGHT
+        sPrint("LOG -- ");
+        sPrintln(line.c_str());
+    #endif
 }
