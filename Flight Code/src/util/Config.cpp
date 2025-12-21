@@ -43,7 +43,6 @@ void Config::parseConfig(std::string config, std::string configValues[]){
                 entry = config.substr(startIndex + 1, breakIndex - startIndex - 1);
             }
             configValues[constantsFilled] = entry;
-            sPrintln(entry.c_str());
             constantsFilled++;
         }
 

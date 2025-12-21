@@ -4,36 +4,26 @@
 #include <Arduino.h>
 #include <string>
 #include "../util/Config.hpp"
+#include "../hardware/UI/UI.h"
 #include <type_traits>
 
-void Log::initialize(Config& config){
+void Log::initialize(Config& config, UI& ui){
     sPrintln("Initializing log");
     pinMode(hardwareMap::SD_CD, INPUT);
 
     //Check card detect
     while(!hasCard()){
-        sPrintln("Please insert card");
+        sPrint("Please insert card -- ");
         delay(2000);
     }
-    if(!hasCard())
-        //throw(SetupException("No SD card detected", 1));
-    sPrintln("Card detected");
+    sPrintln("\nCard detected");
 
     //Start SPI communications with SD card
     if(!SD.begin(hardwareMap::SD_CS)){
-        sPrintln("Couldn't communicate with SD card");
+        ui.startError("Couldn't communicate with SD card", 1);
         return;
     }
-    sPrintln("Able to read SD");
-
-    readConfig(config);
-    openLogFile(config.LOG_NAME);
-
-    printPreamble(config.configString);
-    
-    if(config.SIMULATION);
-        //openSimFile();
-    sPrintln("Log initialized");
+    sPrintln("Successful log initialization");
 }
 
 void Log::printPreamble(std::string configString){
@@ -41,26 +31,35 @@ void Log::printPreamble(std::string configString){
     logPrintln(std::string("Code compiled on ") + __DATE__ + " at " + __TIME__);
     
     //Store config in logFile
+    sPrintln("Configuration ------------------");
     logPrintln(configString.c_str());
+    sPrintln(configString.c_str());
+    sPrintln("--------------------------------");
+    //Grab optional user notes in necessary
+    sPrint("Add any addition notes (max 1 line): ");
+    #if SERIAL_ENABLED
+        while(Serial.available() == 0)
+            delay(10);
+        std::string additionalNotes = Serial.readString().c_str();
+        sPrintln(additionalNotes.c_str());
+        logPrintln("Additional notes: " + additionalNotes);
+    #endif
     flushSD();
 }
 
 //Opens config file, reads all the data and sends to Config, then closes file
-void Log::readConfig(Config& config){
+void Log::readConfig(Config& config, UI& ui){
     configFile = SD.open("config.csv", FILE_READ);
         std::string configString;
         if(configFile){
             sPrintln("Opened config successfully");
             while (configFile.available()){
                 char newChar = configFile.read();
-                sPrint(newChar);
                 configString += newChar; //Add next character
             }
-            sPrintln(configString.c_str());
             config.configureConstants(configString);
-        } else {
-            sPrintln("Config file not found");
-        }
+        } else
+            ui.startError("Config file not found", 2);
     configFile.close();
 }
 
@@ -68,20 +67,18 @@ bool Log::hasCard(){
     return digitalRead(hardwareMap::SD_CD) == LOW; //grounded when card in
 }
 
-void Log::openLogFile(std::string baseName){
-    sPrintln(baseName.c_str());
+void Log::openLogFile(std::string baseName, UI& ui){
     std::string flightFileName;
     int counter = 0;
     do{
         flightFileName = baseName + std::to_string(counter) + ".CSV";
-        sPrintln(flightFileName.c_str());
         counter++;
     } while(SD.exists(flightFileName.c_str()));
     flightFile = SD.open(flightFileName.c_str(), FILE_WRITE);
     if(flightFile)
         sPrintln(("Successfully opened " + flightFileName + " for logging").c_str());
     else
-        sPrintln(("Could not open " + flightFileName + " for logging").c_str());
+        ui.startError("Could not open " + flightFileName + " for logging", 3);
 }
 
 
@@ -120,8 +117,8 @@ void Log::attachTag(std::string name, std::function<std::string()> stringGetter)
 void Log::logPrintln(std::string line){
     flightFile.write(line.c_str());
     flightFile.write("\n");
-    #if PRINT_LOG_TO_SERIAL
-        sPrint("LOG -- ");
-        sPrintln(line.c_str());
-    #endif
+    // #if PRINT_LOG_TO_SERIAL
+    //     sPrint("LOG -- ");
+    //     sPrintln(line.c_str());
+    // #endif
 }

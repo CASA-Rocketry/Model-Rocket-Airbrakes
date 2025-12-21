@@ -19,7 +19,14 @@ void Rocket::readSensors(){
 
 
 void Rocket::setup(){
-    log.initialize(config);
+    sPrintln("Starting rocket setup");
+    log.initialize(config, ui);
+    log.readConfig(config, ui);
+    log.openLogFile(config.LOG_NAME, ui);
+    log.printPreamble(config.configString);
+    
+    // if(config.SIMULATION);
+    //     //openSimFile();
     ui.initialize();
     altimeter.initialize();
     imu.initialize();

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "../util/Config.hpp"
+#include "../hardware/UI/UI.h"
 #pragma once
 
 
@@ -15,14 +16,15 @@ private:
     std::vector<std::string> logLine;
     std::vector<std::function<std::string()>> logGetters;
     int valuesAttached = 0; //tracks number of logLine entries that have been attached
-    void readConfig(Config&);
-    void openLogFile(std::string);
+    
     void openSimFile();
     void updateLogLine();
 public:
-    void initialize(Config&);
+    void initialize(Config&, UI&);
     void test();
     bool hasCard();
+    void readConfig(Config&, UI&);
+    void openLogFile(std::string, UI&);
 
     //Templated methods need to be defined in .h file
     template <typename T> 
