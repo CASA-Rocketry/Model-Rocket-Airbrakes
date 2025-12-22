@@ -3,7 +3,6 @@
 class Airbrake{
 private:
     PWMServo servo;
-    float deployment;
     bool enabled;
 public:
     Airbrake();
@@ -17,4 +16,5 @@ public:
     void enable();
     void disable();
     static double getCD(double);
+    float deployment;
 };

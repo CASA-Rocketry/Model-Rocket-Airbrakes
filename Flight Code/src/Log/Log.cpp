@@ -33,14 +33,14 @@ void Log::printPreamble(std::string configString){
     //Store config in logFile
     
     //Grab optional user notes in necessary
-    sPrint("Add any addition notes (max 1 line): ");
-    #if SERIAL_ENABLED
-        while(Serial.available() == 0)
-            delay(10);
-        std::string additionalNotes = Serial.readString().c_str();
-        sPrintln(additionalNotes.c_str());
-        logPrintln("Additional notes: " + additionalNotes);
-    #endif
+    // sPrint("Add any addition notes (max 1 line): ");
+    // #if SERIAL_ENABLED
+    //     while(Serial.available() == 0)
+    //         delay(10);
+    //     std::string additionalNotes = Serial.readString().c_str();
+    //     sPrintln(additionalNotes.c_str());
+    //     logPrintln("Additional notes: " + additionalNotes);
+    // #endif
     flushSD();
 }
 

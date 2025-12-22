@@ -34,19 +34,17 @@ void Airbrake::test(){
 
 //Sets servo from 0 to 1 and updates deployment
 void Airbrake::setDeployment(double val){
-    if(!enabled) //0 if disabled
-        servo.write(0);
-    else {
-        //Clamp val 
-        if(val > 1) 
-            val = 1;
-        else if (val < 0)
-            val = 0;
+    //Clamp val 
+    if(val > 1) 
+        val = 1;
+    else if (val < 0)
+        val = 0;
 
-        deployment = val;
-        
+    deployment = val;
+    if(!enabled) //0 if disabled, but still compute and update deployment
+        servo.write(0);
+    else 
         servo.write(val * constants::airbrake::MAX_DEPLOYMENT_DEGREES);
-    }
 }
 
 void Airbrake::enable(){

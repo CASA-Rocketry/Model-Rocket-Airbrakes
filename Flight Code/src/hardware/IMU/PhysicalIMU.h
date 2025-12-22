@@ -13,5 +13,5 @@ public:
     void calibrate();
     double pitch; //radians
     imu::Quaternion quat;
-    imu::Vector<3> localAcceleration;
+    imu::Vector<3> localAcceleration, globalAcceleration;
 };
