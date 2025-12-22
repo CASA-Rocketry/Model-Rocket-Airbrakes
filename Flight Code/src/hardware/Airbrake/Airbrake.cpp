@@ -62,17 +62,3 @@ void Airbrake::close(){
 void Airbrake::open(){
     setDeployment(1);
 }
-
-//TODO: determine mapping constants
-double Airbrake::getCD(){
-    return deployment * 0.8;
-}
-
-double Airbrake::getCD(double deployment){
-    return deployment * 0.8;
-}
-
-//TODO: determine mapping constants
-void Airbrake::setCD(double cd){
-    setDeployment(cd / 0.8);
-}

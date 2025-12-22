@@ -45,6 +45,7 @@ public:
 
     void update();
     void flushSD();
+    void close();
     void writeLogLine(); //Could be private, but used once publically to write headers
     void printPreamble(std::string);
     void logPrintln(std::string);

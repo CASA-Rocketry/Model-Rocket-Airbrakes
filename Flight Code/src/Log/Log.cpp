@@ -90,6 +90,10 @@ void Log::updateLogLine(){
     }
 }
 
+void Log::close(){
+    flightFile.close();
+}
+
 //Writes logLine to SD card
 void Log::writeLogLine(){
     std::string line = "";

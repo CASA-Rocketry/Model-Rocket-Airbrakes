@@ -11,10 +11,7 @@ public:
     void setDeployment(double);
     void close();
     void open();
-    double getCD();
-    void setCD(double);
     void enable();
     void disable();
-    static double getCD(double);
     float deployment;
 };

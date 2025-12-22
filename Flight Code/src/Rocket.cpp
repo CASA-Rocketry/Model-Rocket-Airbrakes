@@ -12,6 +12,10 @@ Rocket::Rocket(){
     //Secondary time stamps
     usLaunch = usApogee = usLand = 0;
     apogeeMeters = 0;
+
+    //UI Button management
+    buttonPrevious = false;
+    usButtonStart = 0;
 }
 
 Rocket::~Rocket(){
@@ -19,7 +23,7 @@ Rocket::~Rocket(){
 
 void Rocket::readSensors(){
     altimeter.readValues();
-    imu.readAndCalculatePitch();
+    imu.readValues();
 }
 
 
@@ -69,6 +73,7 @@ void Rocket::setup(){
         delay(50);
     ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
     altimeter.calibrate();
+    ui.setTone(5000, 5000);
     log.logPrintln("Calibration point: " + std::to_string(altimeter.altitudeOffset));
     
     addLogTags();
@@ -97,6 +102,7 @@ void Rocket::addLogTags(){
     log.attachTag("State Estimation a", stateEstimator.a());
 
     log.attachTag("Servo deployment", brake.deployment);
+    //log.attachTag("Estimated apogee", [&] () -> double {return control::getApogee(stateEstimator.y(), stateEstimator.v(), )})
 
     
 
@@ -113,6 +119,14 @@ void Rocket::update(){
 
     readSensors(); //Inicludes calculation of all sensor quantities prior to KF fusion
     stateEstimator.update(altimeter.altitude, imu.globalAcceleration.z(), usDelta / 1000000.0);
+    //brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));
+
+    //Check for apogee (outside of modes in case of stating error)
+    if(stateEstimator.y() > apogeeMeters){
+        apogeeMeters = stateEstimator.y();
+        usApogee = usCurrent;
+    }
+
 
     switch(mode){
         case SETUP:
@@ -128,20 +142,52 @@ void Rocket::update(){
             if(usCurrent - usLaunch > config.COAST_LOCKOUT_SECONDS * 1000 * 1000)
                 mode = COASTING;
             break;
-        case COASTING: //Also includes first several seconds of recovery
-            //if()
+        case COASTING: //Also includes first several seconds of recovery so as to not prematurely switch modes
+            brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));
+            if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5)
+                mode = RECOVERY;
             break;
-        
+        case RECOVERY:
+            log.flushSD();
+            brake.setDeployment(0);
+            if(std::abs(stateEstimator.v()) < 0.1){
+                mode = LANDED;
+                usLand = usCurrent;
+            }
+            break;
+    }
+
+    //Allow ending regardless of state, though it should occur in LANDED mode
+    //10 second continuous hold to 
+    if(ui.getButton()){
+        ui.setBlue(1);
+        if(!buttonPrevious){
+            //Initial press
+            usButtonStart = usCurrent;
+            buttonPrevious = true;
+        } else if(usCurrent - usButtonStart >= 10 * 1000 * 1000)
+            end();
+    } else {
+        buttonPrevious = false;
+        ui.setBlue(0);
     }
 
 
     log.update();
+}
 
-    //10 second continuious press stops program
-    if(ui.getButton()){
-        log.flushSD();
-        ui.setBlue(1);
-        ui.startError("Program finished", 7);
-    } else  
-        ui.setBlue(0);
+void Rocket::end(){
+    ui.setTone(500, 3000);
+    ui.setColor(1, 1, 1);
+    log.logPrintln("Apogee was " + std::to_string(apogeeMeters) + " and occured at " + std::to_string((usApogee - usLaunch)/1000000.0) + " seconds");
+    log.logPrintln("Total flight time was " + std::to_string((usLand - usLaunch)/1000000.0) + " seconds");
+    log.close();
+    
+    //Continuosly print to serial, even if not connected
+    while(true){
+        printTag("Apogee (m)", apogeeMeters);
+        printTag("Apogee time stamp (s)", (usApogee - usLaunch)/1000000.0);
+        printTag("Total flight time (s)", (usLand - usLaunch)/1000000.0);
+        delay(5000);
+    }
 }

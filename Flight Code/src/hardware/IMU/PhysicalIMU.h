@@ -9,7 +9,7 @@ public:
     PhysicalIMU();
     void initialize();
     void getPitch();
-    void readAndCalculatePitch();
+    void readValues();
     void calibrate();
     double pitch; //radians
     imu::Quaternion quat;

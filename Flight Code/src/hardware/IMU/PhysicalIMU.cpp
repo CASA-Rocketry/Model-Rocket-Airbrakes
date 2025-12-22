@@ -73,7 +73,7 @@ void PhysicalIMU::calibrate(){
 
 PhysicalIMU::PhysicalIMU(){}
 
-void PhysicalIMU::readAndCalculatePitch(){
+void PhysicalIMU::readValues(){
     quat = bno.getQuat();
     //imu.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_GRAVITY);
     localAcceleration = bno.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_ACCELEROMETER) - bno.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_GRAVITY);
