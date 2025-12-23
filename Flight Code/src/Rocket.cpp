@@ -183,7 +183,7 @@ void Rocket::end(){
     log.logPrintln("Total flight time was " + std::to_string((usLand - usLaunch)/1000000.0) + " seconds");
     log.close();
     
-    //Continuosly print to serial, even if not connected
+    //Continuosly (5s period) print summary info to Serial, even if not connected
     while(true){
         printTag("Apogee (m)", apogeeMeters);
         printTag("Apogee time stamp (s)", (usApogee - usLaunch)/1000000.0);

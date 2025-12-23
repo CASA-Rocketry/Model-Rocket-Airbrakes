@@ -23,10 +23,11 @@ double control::computeDeployment(double y, double v, Config& config){
 
     double addition, deployment = 0;
     for(int digits = 1; digits <= 6; digits++){
-        addition = 1 >> digits; 
+        addition = 1.0 / (1 << digits); 
         if(getApogee(y, v, deployment + addition, config) > config.TARGET_APOGEE_METERS)
             deployment += addition;
     }
+    return deployment;
 }
 
 double control::getCD(double deployment, Config& config){
