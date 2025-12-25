@@ -1,5 +1,6 @@
 #include <Adafruit_BNO055.h>
 #include <string>
+#include "../UI/UI.h"
 
 class PhysicalIMU{
 private:    

@@ -55,7 +55,7 @@ void Rocket::setup(){
     if(config.AIRBRAKES_ENABLED)
         brake.enable();
 
-    imu.calibrate();
+    //imu.calibrate();
     brake.test();
 
     ui.setTone(2000, 5000);

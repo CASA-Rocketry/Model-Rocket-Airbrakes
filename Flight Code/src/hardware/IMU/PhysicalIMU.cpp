@@ -11,8 +11,8 @@ void PhysicalIMU::initialize(){
     bno.setMode(OPERATION_MODE_IMUPLUS);
     bno.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
     bno.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
-    adafruit_bno055_offsets_t offsets{3, -12, -34, 35, -347, -224, 0, -2, -1, 1000, 1034};
-    bno.setSensorOffsets(offsets);
+    //adafruit_bno055_offsets_t offsets{3, -12, -34, 35, -347, -224, 0, -2, -1, 1000, 1034};
+    //bno.setSensorOffsets(offsets);
 
     sPrintln("IMU Initialized");
 }
@@ -29,6 +29,13 @@ void PhysicalIMU::calibrate(){
     } while(calibrationStatus != 3);
     sPrintln("Gyro calibration complete");
 
+    sPrint("Calibrating accelerometer - ");
+    do{
+        bno.getCalibration(&otherStatus, &otherStatus, &calibrationStatus, &otherStatus);
+        sPrint(calibrationStatus);
+        delay(100);
+    } while(calibrationStatus != 3);
+
     //Magnetometer calibration wave around)
     sPrintln("Calibrating magnetometer");
     do {
@@ -38,36 +45,35 @@ void PhysicalIMU::calibrate(){
     sPrintln("Magnetometer calibration complete");
 
     //Accelerometer calibration (move for each axis to sense earth)
-    sPrint("Calibrating accelerometer - ");
-    do{
-        // calibrationStatus = 3;
-        bno.getCalibration(&otherStatus, &otherStatus, &calibrationStatus, &otherStatus);
-        sPrint(calibrationStatus);
-        delay(100);
-    } while(calibrationStatus != 3);
+    
+
+
     sPrintln("\nAccelerometer calibration complete");
     adafruit_bno055_offsets_t offsets;
     bno.getSensorOffsets(offsets);
-    // Serial.print("Accelerometer: ");
-    // Serial.print(offsets.accel_offset_x); Serial.print(" ");
-    // Serial.print(offsets.accel_offset_y); Serial.print(" ");
-    // Serial.print(offsets.accel_offset_z); Serial.print(" ");
+    while(true){
+    Serial.print("Accelerometer: ");
+    Serial.print(offsets.accel_offset_x); Serial.print(" ");
+    Serial.print(offsets.accel_offset_y); Serial.print(" ");
+    Serial.print(offsets.accel_offset_z); Serial.print(" ");
 
-    // Serial.print("\nGyro: ");
-    // Serial.print(offsets.gyro_offset_x); Serial.print(" ");
-    // Serial.print(offsets.gyro_offset_y); Serial.print(" ");
-    // Serial.print(offsets.gyro_offset_z); Serial.print(" ");
+    Serial.print("\nGyro: ");
+    Serial.print(offsets.gyro_offset_x); Serial.print(" ");
+    Serial.print(offsets.gyro_offset_y); Serial.print(" ");
+    Serial.print(offsets.gyro_offset_z); Serial.print(" ");
 
-    // Serial.print("\nMag: ");
-    // Serial.print(offsets.mag_offset_x); Serial.print(" ");
-    // Serial.print(offsets.mag_offset_y); Serial.print(" ");
-    // Serial.print(offsets.mag_offset_z); Serial.print(" ");
+    Serial.print("\nMag: ");
+    Serial.print(offsets.mag_offset_x); Serial.print(" ");
+    Serial.print(offsets.mag_offset_y); Serial.print(" ");
+    Serial.print(offsets.mag_offset_z); Serial.print(" ");
 
-    // Serial.print("\nAccel Radius: ");
-    // Serial.print(offsets.accel_radius);
+    Serial.print("\nAccel Radius: ");
+    Serial.print(offsets.accel_radius);
 
-    // Serial.print("\nMag Radius: ");
-    // Serial.print(offsets.mag_radius);
+    Serial.print("\nMag Radius: ");
+    Serial.print(offsets.mag_radius);
+    delay(1000);
+    }
     // bno.setMode(OPERATION_MODE_IMUPLUS); //reset mode to not include magnetometer
 }
 
