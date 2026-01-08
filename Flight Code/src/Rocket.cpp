@@ -70,7 +70,7 @@ void Rocket::setup(){
     }
     sPrint("Tip rocket over for 5 seconds to begin altimeter lockout of ");  sPrintln(config.ALTIMETER_LOCKOUT_SECONDS);
     Trigger::reset();
-    while(Trigger::getHoldState(ui.getButton(), 5000)) //require 5 second hold
+    while(!Trigger::getHoldState(ui.getButton(), 5000)) //require 5 second hold
         delay(50);
     Trigger::reset();
     ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
