@@ -5,6 +5,7 @@
 #include "util/Config.hpp"
 #include "hardware/UI/UI.h"
 #include "control/StateEstimator.h"
+#include "util/Trigger.h"
 
 class Rocket {
 private:
@@ -26,7 +27,6 @@ private:
     //UI Button management
     bool buttonPrevious;
     unsigned long usButtonStart;
-
     
     StateEstimator stateEstimator;
     Config config;

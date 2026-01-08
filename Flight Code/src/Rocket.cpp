@@ -68,9 +68,11 @@ void Rocket::setup(){
         sPrintln("Running in FLIGHT mode");
         ui.setGreen(1);
     }
-    sPrint("Press button to start altimeter lockout of ");  sPrintln(config.ALTIMETER_LOCKOUT_SECONDS);
-    while(!ui.getButton())
+    sPrint("Tip rocket over for 5 seconds to begin altimeter lockout of ");  sPrintln(config.ALTIMETER_LOCKOUT_SECONDS);
+    Trigger::reset();
+    while(Trigger::getHoldState(ui.getButton(), 5000)) //require 5 second hold
         delay(50);
+    Trigger::reset();
     ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
     altimeter.calibrate();
     ui.setTone(5000, 5000);
@@ -158,20 +160,9 @@ void Rocket::update(){
     }
 
     //Allow ending regardless of state, though it should occur in LANDED mode
-    //10 second continuous hold to 
-    if(ui.getButton()){
-        ui.setBlue(1);
-        if(!buttonPrevious){
-            //Initial press
-            usButtonStart = usCurrent;
-            buttonPrevious = true;
-        } else if(usCurrent - usButtonStart >= 10 * 1000 * 1000)
-            end();
-    } else {
-        buttonPrevious = false;
-        ui.setBlue(0);
-    }
-
+    //5 second continuous hold to 
+    if(Trigger::getHoldState(ui.getButton(), 5000))
+        end();
 
     log.update();
 }
