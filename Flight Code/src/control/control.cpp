@@ -12,6 +12,18 @@ double control::getApogee(double y, double v, double deployment, Config& config)
     return y + std::log(logArg) * config.BURNOUT_MASS_KG / (2 * k);
 }
 
+double control::getApogeeIterative(double y, double v, double deployment, Config& config){
+    double cd = control::getCD(deployment, config);
+    double kOverMass = 0.5 * cd * config.AIR_DENSITY_KG_PER_METERS_CUBED * config.ROCKET_AREA_METERS_SQUARED / config.BURNOUT_MASS_KG;
+    double a;
+    //Changes y and v, so they must be passed by value
+    while(v > 0){ //Repeat until apogee found 
+        a = -constants::physics::GRAVITY - kOverMass * v * v;
+        v += a * constants::physics::ITERATION_TIME_STEP; //Could change step size inversely proportional to velocity for better precision
+        y += v * constants::physics::ITERATION_TIME_STEP;
+    }
+}
+
 //Numerically solves for cd to reach target apogee in config
 //Computes 
 double control::computeDeployment(double y, double v, Config& config){

@@ -10,6 +10,7 @@ namespace constants{
 
     namespace physics{
         const double GRAVITY = 9.81;
+        const double ITERATION_TIME_STEP = 0.01;
         const double SEA_LEVEL_PRESSURE = 1013.15; //hPa
     }
 
