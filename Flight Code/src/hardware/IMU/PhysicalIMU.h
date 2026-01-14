@@ -9,10 +9,10 @@ private:
 public: 
     PhysicalIMU();
     void initialize();
-    void getPitch();
     void readValues();
     void calibrate();
-    double pitch; //radians
+    double getPitch();
+    //double pitch; //radians
     imu::Quaternion quat;
     imu::Vector<3> localAcceleration, globalAcceleration;
 };

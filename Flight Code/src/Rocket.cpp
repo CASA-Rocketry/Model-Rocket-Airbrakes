@@ -3,6 +3,9 @@
 #include "Log/Log.h"
 #include "util/print.h"
 #include "control/control.h"
+#include <cmath>
+
+#define WIND_TUNNEL false
 
 
 Rocket::Rocket(){
@@ -70,9 +73,14 @@ void Rocket::setup(){
     }
     sPrint("Tip rocket over for 5 seconds to begin altimeter lockout of ");  sPrintln(config.ALTIMETER_LOCKOUT_SECONDS);
     Trigger::reset();
-    while(!Trigger::getHoldState(ui.getButton(), 5000)) //require 5 second hold
+
+    //Must tip rocket to at least 135 degrees for 5 seconds
+    do {
+        imu.readValues();
         delay(50);
+    } while (!Trigger::getHoldState(imu.getPitch() > 0.75 * M_PI, 5000));
     Trigger::reset();
+
     ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
     altimeter.calibrate();
     ui.setTone(5000, 5000);
@@ -130,34 +138,42 @@ void Rocket::update(){
     }
 
 
-    switch(mode){
-        case SETUP:
-            ui.startError("update() called without rocket initialization", 4);
-            break;
-        case IDLE:
-            if(imu.globalAcceleration.z() >= config.LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED){
-                mode = BURNING;
-                usLaunch = usCurrent;
-            }
-            break; //Wait cycle to start
-        case BURNING:
-            if(usCurrent - usLaunch > config.COAST_LOCKOUT_SECONDS * 1000 * 1000)
-                mode = COASTING;
-            break;
-        case COASTING: //Also includes first several seconds of recovery so as to not prematurely switch modes
-            brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));
-            if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5)
-                mode = RECOVERY;
-            break;
-        case RECOVERY:
-            log.flushSD();
+    #if WIND_TUNNEL
+        //on for 30s, off for 30s, repeat
+        if(usCurrent % (1000*1000*60) <= 1000*1000*30)
+            brake.setDeployment(1);
+        else
             brake.setDeployment(0);
-            if(std::abs(stateEstimator.v()) < 0.1){
-                mode = LANDED;
-                usLand = usCurrent;
-            }
-            break;
-    }
+    #else
+        switch(mode){
+            case SETUP:
+                ui.startError("update() called without rocket initialization", 4);
+                break;
+            case IDLE:
+                if(imu.globalAcceleration.z() >= config.LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED){
+                    mode = BURNING;
+                    usLaunch = usCurrent;
+                }
+                break; //Wait cycle to start
+            case BURNING:
+                if(usCurrent - usLaunch > config.COAST_LOCKOUT_SECONDS * 1000 * 1000)
+                    mode = COASTING;
+                break;
+            case COASTING: //Also includes first several seconds of recovery so as to not prematurely switch modes
+                brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));
+                if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5)
+                    mode = RECOVERY;
+                break;
+            case RECOVERY:
+                log.flushSD();
+                brake.setDeployment(0);
+                if(std::abs(stateEstimator.v()) < 0.1){
+                    mode = LANDED;
+                    usLand = usCurrent;
+                }
+                break;
+        }
+    #endif
 
     //Allow ending regardless of state, though it should occur in LANDED mode
     //5 second continuous hold to 

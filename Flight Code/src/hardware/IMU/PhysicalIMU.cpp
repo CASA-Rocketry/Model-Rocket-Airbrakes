@@ -85,3 +85,9 @@ void PhysicalIMU::readValues(){
     localAcceleration = bno.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_ACCELEROMETER) - bno.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_GRAVITY);
     globalAcceleration = quat.rotateVector(localAcceleration);
 }
+
+//Assumes values have been read already
+//Return in [0, pi]
+double PhysicalIMU::getPitch(){
+    return std::acos(1 - 2 * quat.x() * quat.x() - 2 * quat.y() * quat.y());
+}
