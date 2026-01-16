@@ -5,7 +5,7 @@
 #include "control/control.h"
 #include <cmath>
 
-#define WIND_TUNNEL false
+#define WIND_TUNNEL true
 
 
 Rocket::Rocket(){
@@ -78,6 +78,7 @@ void Rocket::setup(){
     do {
         imu.readValues();
         delay(50);
+        sPrintln(imu.getPitch() * 180 / M_PI);
     } while (!Trigger::getHoldState(imu.getPitch() > 0.75 * M_PI, 5000));
     Trigger::reset();
 
@@ -140,10 +141,16 @@ void Rocket::update(){
 
     #if WIND_TUNNEL
         //on for 30s, off for 30s, repeat
-        if(usCurrent % (1000*1000*60) <= 1000*1000*30)
-            brake.setDeployment(1);
-        else
+        if(usCurrent % (1000*1000*100) <= 1000*1000*20)
             brake.setDeployment(0);
+        else if (usCurrent % (1000*1000*100) <= 1000*1000*40)
+            brake.setDeployment(0.25);
+        else if (usCurrent % (1000*1000*100) <= 1000*1000*60)
+            brake.setDeployment(0.5);
+        else if (usCurrent % (1000*1000*100) <= 1000*1000*80)
+            brake.setDeployment(0.75);
+        else
+            brake.setDeployment(1);
     #else
         switch(mode){
             case SETUP:

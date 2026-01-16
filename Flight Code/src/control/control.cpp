@@ -22,6 +22,7 @@ double control::getApogeeIterative(double y, double v, double deployment, Config
         v += a * constants::physics::ITERATION_TIME_STEP; //Could change step size inversely proportional to velocity for better precision
         y += v * constants::physics::ITERATION_TIME_STEP;
     }
+    return y;
 }
 
 //Numerically solves for cd to reach target apogee in config

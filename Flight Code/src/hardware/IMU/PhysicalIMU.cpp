@@ -4,13 +4,23 @@
 
 void PhysicalIMU::initialize(){
     sPrintln("Initializing IMU");
-    if(!bno.begin()){
-        sPrintln("Error initializing IMU");
-    }
+    if(!orientationIMU.begin())
+        sPrintln("Error initializing orietnationIMU");
+    else if(!accelerationIMU.begin())
+        sPrintln("Error initializing accelerationIMU");
     
-    bno.setMode(OPERATION_MODE_IMUPLUS);
-    bno.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
-    bno.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
+    //Setup orientationIMU
+    orientationIMU.setMode(OPERATION_MODE_IMUPLUS);
+    orientationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
+    orientationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
+
+    //Setup accelerationIMU
+    accelerationIMU.setMode(OPERATION_MODE_ACCONLY);
+    accelerationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
+    accelerationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
+    //TODO: ensure high output frequency (~200 hz)
+
+
     //adafruit_bno055_offsets_t offsets{3, -12, -34, 35, -347, -224, 0, -2, -1, 1000, 1034};
     //bno.setSensorOffsets(offsets);
 
@@ -24,14 +34,14 @@ void PhysicalIMU::calibrate(){
     //Gyro calibration (set still)
     sPrintln("Calibration gyro");
     do {
-        bno.getCalibration(&otherStatus, &calibrationStatus, &otherStatus, &otherStatus);
+        orientationIMU.getCalibration(&otherStatus, &calibrationStatus, &otherStatus, &otherStatus);
         delay(100);
     } while(calibrationStatus != 3);
     sPrintln("Gyro calibration complete");
 
     sPrint("Calibrating accelerometer - ");
     do{
-        bno.getCalibration(&otherStatus, &otherStatus, &calibrationStatus, &otherStatus);
+        orientationIMU.getCalibration(&otherStatus, &otherStatus, &calibrationStatus, &otherStatus);
         sPrint(calibrationStatus);
         delay(100);
     } while(calibrationStatus != 3);
@@ -50,7 +60,7 @@ void PhysicalIMU::calibrate(){
 
     sPrintln("\nAccelerometer calibration complete");
     adafruit_bno055_offsets_t offsets;
-    bno.getSensorOffsets(offsets);
+    orientationIMU.getSensorOffsets(offsets);
     while(true){
     Serial.print("Accelerometer: ");
     Serial.print(offsets.accel_offset_x); Serial.print(" ");
@@ -80,9 +90,10 @@ void PhysicalIMU::calibrate(){
 PhysicalIMU::PhysicalIMU(){}
 
 void PhysicalIMU::readValues(){
-    quat = bno.getQuat();
-    //imu.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_GRAVITY);
-    localAcceleration = bno.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_ACCELEROMETER) - bno.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_GRAVITY);
+    quat = orientationIMU.getQuat();
+    rawLocalAcceleration = accelerationIMU.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_ACCELEROMETER);
+    gravityLocalAcceleration = orientationIMU.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_GRAVITY);
+    localAcceleration = rawLocalAcceleration - gravityLocalAcceleration;
     globalAcceleration = quat.rotateVector(localAcceleration);
 }
 
