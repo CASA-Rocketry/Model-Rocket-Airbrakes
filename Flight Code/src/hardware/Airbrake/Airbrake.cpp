@@ -41,6 +41,7 @@ void Airbrake::setDeployment(double val){
         val = 0;
 
     deployment = val;
+    currentPositionRateLimiter.get(val);
     if(!enabled) //0 if disabled, but still compute and update deployment
         servo.write(0);
     else 

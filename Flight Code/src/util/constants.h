@@ -6,6 +6,7 @@ Do not use a constant here if it is clear from context what it means (ie. delays
 namespace constants{
     namespace airbrake{
         const double MAX_DEPLOYMENT_DEGREES = 170.0;
+        const double MAX_VELOCITY_DEPLOYMENT_PER_SECOND = 3.0; //TODO, determine this
     }
 
     namespace physics{
