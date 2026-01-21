@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 Includes all non-configurable constants that don't relate to hardware addresses
 These exist so that the code is easy to read from the names

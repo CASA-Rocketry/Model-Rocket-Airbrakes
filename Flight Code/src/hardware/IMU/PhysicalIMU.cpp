@@ -24,6 +24,9 @@ void PhysicalIMU::initialize(){
     //adafruit_bno055_offsets_t offsets{3, -12, -34, 35, -347, -224, 0, -2, -1, 1000, 1034};
     //bno.setSensorOffsets(offsets);
 
+    dPrint("Orientation mode: "); dPrintln(orientationIMU.getMode());
+    dPrint("Acceleration mode: "); dPrintln(accelerationIMU.getMode());
+
     sPrintln("IMU Initialized");
 }
 
@@ -62,27 +65,27 @@ void PhysicalIMU::calibrate(){
     adafruit_bno055_offsets_t offsets;
     orientationIMU.getSensorOffsets(offsets);
     while(true){
-    Serial.print("Accelerometer: ");
-    Serial.print(offsets.accel_offset_x); Serial.print(" ");
-    Serial.print(offsets.accel_offset_y); Serial.print(" ");
-    Serial.print(offsets.accel_offset_z); Serial.print(" ");
+        sPrint("Accelerometer: ");
+        sPrint(offsets.accel_offset_x); sPrint(" ");
+        sPrint(offsets.accel_offset_y); sPrint(" ");
+        sPrint(offsets.accel_offset_z); sPrint(" ");
 
-    Serial.print("\nGyro: ");
-    Serial.print(offsets.gyro_offset_x); Serial.print(" ");
-    Serial.print(offsets.gyro_offset_y); Serial.print(" ");
-    Serial.print(offsets.gyro_offset_z); Serial.print(" ");
+        sPrint("\nGyro: ");
+        sPrint(offsets.gyro_offset_x); sPrint(" ");
+        sPrint(offsets.gyro_offset_y); sPrint(" ");
+        sPrint(offsets.gyro_offset_z); sPrint(" ");
 
-    Serial.print("\nMag: ");
-    Serial.print(offsets.mag_offset_x); Serial.print(" ");
-    Serial.print(offsets.mag_offset_y); Serial.print(" ");
-    Serial.print(offsets.mag_offset_z); Serial.print(" ");
+        sPrint("\nMag: ");
+        sPrint(offsets.mag_offset_x); sPrint(" ");
+        sPrint(offsets.mag_offset_y); sPrint(" ");
+        sPrint(offsets.mag_offset_z); sPrint(" ");
 
-    Serial.print("\nAccel Radius: ");
-    Serial.print(offsets.accel_radius);
+        sPrint("\nAccel Radius: ");
+        sPrint(offsets.accel_radius);
 
-    Serial.print("\nMag Radius: ");
-    Serial.print(offsets.mag_radius);
-    delay(1000);
+        sPrint("\nMag Radius: ");
+        sPrint(offsets.mag_radius);
+        delay(1000);
     }
     // bno.setMode(OPERATION_MODE_IMUPLUS); //reset mode to not include magnetometer
 }
@@ -91,6 +94,7 @@ PhysicalIMU::PhysicalIMU(){}
 
 void PhysicalIMU::readValues(){
     quat = orientationIMU.getQuat();
+    //dPrintln(accelerationIMU.getMode());
     rawLocalAcceleration = accelerationIMU.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_ACCELEROMETER);
     gravityLocalAcceleration = orientationIMU.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_GRAVITY);
     localAcceleration = rawLocalAcceleration - gravityLocalAcceleration;

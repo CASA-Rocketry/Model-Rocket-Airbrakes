@@ -37,6 +37,8 @@ private:
     UI ui;
     void addLogTags();
     void readSensors();
+    void updateFlightStates();
+    void updateWindTunnel();
     void end();
 public:
     Rocket();

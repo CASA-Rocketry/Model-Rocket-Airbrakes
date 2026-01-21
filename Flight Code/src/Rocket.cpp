@@ -5,11 +5,11 @@
 #include "control/control.h"
 #include <cmath>
 
-#define WIND_TUNNEL true
+#define WIND_TUNNEL false
 
 
 Rocket::Rocket(){
-    //Maing time tracking
+    //Main time tracking
     usCurrent = usLast = usDelta = 0;
 
     //Secondary time stamps
@@ -57,8 +57,6 @@ void Rocket::setup(){
     brake.initialize();
     if(config.AIRBRAKES_ENABLED)
         brake.enable();
-
-    //imu.calibrate();
     brake.test();
 
     ui.setTone(2000, 5000);
@@ -78,11 +76,13 @@ void Rocket::setup(){
     do {
         imu.readValues();
         delay(50);
-        sPrintln(imu.getPitch() * 180 / M_PI);
+        dPrintln(imu.getPitch() * 180 / M_PI);
     } while (!Trigger::getHoldState(imu.getPitch() > 0.75 * M_PI, 5000));
     Trigger::reset();
 
-    ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
+    #if !DEBUG
+        ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
+    #endif
     altimeter.calibrate();
     ui.setTone(5000, 5000);
     log.logPrintln("Calibration point: " + std::to_string(altimeter.altitudeOffset));
@@ -130,7 +130,6 @@ void Rocket::update(){
 
     readSensors(); //Inicludes calculation of all sensor quantities prior to KF fusion
     stateEstimator.update(altimeter.altitude, imu.globalAcceleration.z(), usDelta / 1000000.0);
-    //brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));
 
     //Check for apogee (outside of modes in case of stating error)
     if(stateEstimator.y() > apogeeMeters){
@@ -138,21 +137,22 @@ void Rocket::update(){
         usApogee = usCurrent;
     }
 
-
     #if WIND_TUNNEL
-        //on for 30s, off for 30s, repeat
-        if(usCurrent % (1000*1000*100) <= 1000*1000*20)
-            brake.setDeployment(0);
-        else if (usCurrent % (1000*1000*100) <= 1000*1000*40)
-            brake.setDeployment(0.25);
-        else if (usCurrent % (1000*1000*100) <= 1000*1000*60)
-            brake.setDeployment(0.5);
-        else if (usCurrent % (1000*1000*100) <= 1000*1000*80)
-            brake.setDeployment(0.75);
-        else
-            brake.setDeployment(1);
+        udpateWindTunnel();
     #else
-        switch(mode){
+        updateFlightStates();
+    #endif
+
+    //Allow ending regardless of state, though it should occur in LANDED mode
+    //5 second continuous hold to 
+    if(Trigger::getHoldState(ui.getButton(), 5000))
+        end();
+
+    log.update();
+}
+
+void Rocket::updateFlightStates(){
+    switch(mode){
             case SETUP:
                 ui.startError("update() called without rocket initialization", 4);
                 break;
@@ -180,14 +180,20 @@ void Rocket::update(){
                 }
                 break;
         }
-    #endif
+}
 
-    //Allow ending regardless of state, though it should occur in LANDED mode
-    //5 second continuous hold to 
-    if(Trigger::getHoldState(ui.getButton(), 5000))
-        end();
-
-    log.update();
+void Rocket::updateWindTunnel(){
+    //on for 30s, off for 30s, repeat
+        if(usCurrent % (1000*1000*100) <= 1000*1000*20)
+            brake.setDeployment(0);
+        else if (usCurrent % (1000*1000*100) <= 1000*1000*40)
+            brake.setDeployment(0.25);
+        else if (usCurrent % (1000*1000*100) <= 1000*1000*60)
+            brake.setDeployment(0.5);
+        else if (usCurrent % (1000*1000*100) <= 1000*1000*80)
+            brake.setDeployment(0.75);
+        else
+            brake.setDeployment(1);
 }
 
 void Rocket::end(){
@@ -199,9 +205,9 @@ void Rocket::end(){
     
     //Continuosly (5s period) print summary info to Serial, even if not connected
     while(true){
-        printTag("Apogee (m)", apogeeMeters);
-        printTag("Apogee time stamp (s)", (usApogee - usLaunch)/1000000.0);
-        printTag("Total flight time (s)", (usLand - usLaunch)/1000000.0);
+        sPrintTag("Apogee (m)", apogeeMeters);
+        sPrintTag("Apogee time stamp (s)", (usApogee - usLaunch)/1000000.0);
+        sPrintTag("Total flight time (s)", (usLand - usLaunch)/1000000.0);
         delay(5000);
     }
 }

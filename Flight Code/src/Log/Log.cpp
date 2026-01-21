@@ -54,6 +54,8 @@ void Log::readConfig(Config& config, UI& ui){
                 char newChar = configFile.read();
                 configString += newChar; //Add next character
             }
+            sPrintln(configString.c_str());
+            sPrintln("Finished printing config");
             config.configureConstants(configString);
         } else
             ui.startError("Config file not found", 2);

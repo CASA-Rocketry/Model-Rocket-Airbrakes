@@ -4,8 +4,8 @@
 
 class PhysicalIMU{
 private:    
-    Adafruit_BNO055 orientationIMU{0x28};
-    Adafruit_BNO055 accelerationIMU{0x29};
+    Adafruit_BNO055 orientationIMU{-1, 0x28};
+    Adafruit_BNO055 accelerationIMU{-1, 0x29};
     
 public: 
     PhysicalIMU();

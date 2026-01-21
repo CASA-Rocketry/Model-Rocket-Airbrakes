@@ -32,24 +32,24 @@ void Config::fillConfig(std::string configValues[]){
 
 //Prints out each of the config values to check they were stored properly
 void Config::printCheck(){
-    printTag("Simulation Mode (T/F)", SIMULATION);
-    printTag("Airbrakes Enabled (T/F)", AIRBRAKES_ENABLED);
-    printTag("Log File Name (max 7 chars uppercase)", LOG_NAME.c_str());
-    printTag("Sim File Name (if applicable)", SIM_NAME.c_str());
-    printTag("Burnout Mass (kg)", BURNOUT_MASS_KG);
-    printTag("Air Density (kg/m^3)", AIR_DENSITY_KG_PER_METERS_CUBED);
-    printTag("Rocket CD", ROCKET_CD);
-    printTag("Airbrake CD", AIRBRAKE_CD_FULL_DEPLOYMENT);
-    printTag("Rocket area (m^2)", ROCKET_AREA_METERS_SQUARED);
-    printTag("KF Model Y STD", MODEL_STD_Y);
-    printTag("KF Model V STD", MODEL_STD_V);
-    printTag("KF Model A STD", MODEL_STD_A);
-    printTag("KF Measurement Y STD", MEASUREMENT_STD_Y);
-    printTag("KF Measurement A STD", MEASUREMENT_STD_A);
-    printTag("Target Apogee (m)", TARGET_APOGEE_METERS);
-    printTag("Launch Acceleration (m/s^2)", LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED);
-    printTag("Coast lockout (s)", COAST_LOCKOUT_SECONDS);
-    printTag("Altimeter lockout (s)", ALTIMETER_LOCKOUT_SECONDS);
+    sPrintTag("Simulation Mode (T/F)", SIMULATION);
+    sPrintTag("Airbrakes Enabled (T/F)", AIRBRAKES_ENABLED);
+    sPrintTag("Log File Name (max 7 chars uppercase)", LOG_NAME.c_str());
+    sPrintTag("Sim File Name (if applicable)", SIM_NAME.c_str());
+    sPrintTag("Burnout Mass (kg)", BURNOUT_MASS_KG);
+    sPrintTag("Air Density (kg/m^3)", AIR_DENSITY_KG_PER_METERS_CUBED);
+    sPrintTag("Rocket CD", ROCKET_CD);
+    sPrintTag("Airbrake CD", AIRBRAKE_CD_FULL_DEPLOYMENT);
+    sPrintTag("Rocket area (m^2)", ROCKET_AREA_METERS_SQUARED);
+    sPrintTag("KF Model Y STD", MODEL_STD_Y);
+    sPrintTag("KF Model V STD", MODEL_STD_V);
+    sPrintTag("KF Model A STD", MODEL_STD_A);
+    sPrintTag("KF Measurement Y STD", MEASUREMENT_STD_Y);
+    sPrintTag("KF Measurement A STD", MEASUREMENT_STD_A);
+    sPrintTag("Target Apogee (m)", TARGET_APOGEE_METERS);
+    sPrintTag("Launch Acceleration (m/s^2)", LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED);
+    sPrintTag("Coast lockout (s)", COAST_LOCKOUT_SECONDS);
+    sPrintTag("Altimeter lockout (s)", ALTIMETER_LOCKOUT_SECONDS);
 }
 
 //Accepts config in string form and adds values to configValues
