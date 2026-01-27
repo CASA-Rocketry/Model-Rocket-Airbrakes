@@ -164,8 +164,10 @@ void Rocket::updateFlightStates(){
                 }
                 break; //Wait cycle to start
             case BURNING:
-                if(usCurrent - usLaunch > config.COAST_LOCKOUT_SECONDS * 1000 * 1000)
+                if(usCurrent - usLaunch > config.COAST_LOCKOUT_SECONDS * 1000 * 1000){
                     mode = COASTING;
+                    control::startRateLimiter(config); //starts rate limiter at 0
+                }
                 break;
             case COASTING: //Also includes first several seconds of recovery so as to not prematurely switch modes
                 brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));

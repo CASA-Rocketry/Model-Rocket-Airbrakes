@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Arduino.h>
 
 //Class for managing rate limiting
@@ -10,4 +12,5 @@ private:
 public:
     RateLimiter(double, double);
     double get(double);
+    void updateCurrent(double);
 };

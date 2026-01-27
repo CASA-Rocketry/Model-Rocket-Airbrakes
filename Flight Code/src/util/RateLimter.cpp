@@ -25,3 +25,7 @@ double RateLimiter::get(double requestedVal){
     currentVal += deltaVal;
     return currentVal;
 }
+
+void RateLimiter::updateCurrent(double newCurrentVal){
+    currentVal = newCurrentVal;
+}

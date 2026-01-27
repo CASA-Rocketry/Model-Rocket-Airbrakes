@@ -25,6 +25,14 @@ double control::getApogeeIterative(double y, double v, double deployment, Config
     return y;
 }
 
+
+//Should be called immediately before starting rate limiting 
+void control::startRateLimiter(Config& config){
+    rateLimiter = RateLimiter(0, config.CONTROL_MAX_DEPLOYMENT_PER_SECOND);
+}
+
+//Deployment is 0 when it switches to tracking mode 
+
 //Numerically solves for cd to reach target apogee in config
 //Computes 
 double control::computeDeployment(double y, double v, Config& config){
@@ -40,7 +48,8 @@ double control::computeDeployment(double y, double v, Config& config){
         if(getApogee(y, v, deployment + addition, config) > config.TARGET_APOGEE_METERS)
             deployment += addition;
     }
-    return deployment;
+    //Apply rate limit
+    return rateLimiter.get(deployment);
 }
 
 double control::getCD(double deployment, Config& config){
