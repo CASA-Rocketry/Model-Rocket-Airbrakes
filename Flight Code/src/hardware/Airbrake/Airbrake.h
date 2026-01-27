@@ -5,7 +5,7 @@
 class Airbrake{
 private:
     PWMServo servo;
-    RateLimiter currentPositionRateLimiter{0, 0}; //constants::airbrake::MAX_VELOCITY_DEPLOYMENT_PER_SECOND};
+    RateLimiter currentPositionRateLimiter{0, constants::airbrake::MAX_VELOCITY_DEPLOYMENT_PER_SECOND};
     bool enabled;
 public:
     Airbrake();
@@ -16,5 +16,5 @@ public:
     void open();
     void enable();
     void disable();
-    float deployment;
+    float commandedDeployment, currentDeployment;
 };

@@ -12,7 +12,7 @@ private:
     void fillConfig(std::string[]);
     void parseConfig(std::string, std::string[]);
 public:
-    const int CONFIG_VALUES = 19;
+    const int CONFIG_VALUES = 20;
     std::string configString; //stores raw string before configuring
 
     //Rocket Kinematics 
@@ -48,6 +48,9 @@ public:
     int ALTIMETER_LOCKOUT_SECONDS;
     double TARGET_APOGEE_METERS;
     double KP; //Multiplied in addition to using dt
+    double CONTROL_MAX_DEPLOYMENT_PER_SECOND; //rate limited velocity for control (not physical)
+
+
     void printCheck();
     void configureConstants(std::string);
 };

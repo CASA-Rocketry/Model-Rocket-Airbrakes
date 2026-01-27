@@ -40,12 +40,15 @@ void Airbrake::setDeployment(double val){
     else if (val < 0)
         val = 0;
 
-    deployment = val;
+    commandedDeployment = val;
     currentPositionRateLimiter.get(val);
     if(!enabled) //0 if disabled, but still compute and update deployment
         servo.write(0);
-    else 
+    else {
+        //Write raw, separately update simulated rate limiter
         servo.write(val * constants::airbrake::MAX_DEPLOYMENT_DEGREES);
+        currentDeployment = currentPositionRateLimiter.get(val);
+    }
 }
 
 void Airbrake::enable(){

@@ -28,6 +28,7 @@ void Config::fillConfig(std::string configValues[]){
     KP = std::stod(configValues[17]);
 
     ALTIMETER_LOCKOUT_SECONDS = std::stod(configValues[18]);
+    CONTROL_MAX_DEPLOYMENT_PER_SECOND = std::stod(configValues[19]);
 }
 
 //Prints out each of the config values to check they were stored properly
@@ -50,6 +51,7 @@ void Config::printCheck(){
     sPrintTag("Launch Acceleration (m/s^2)", LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED);
     sPrintTag("Coast lockout (s)", COAST_LOCKOUT_SECONDS);
     sPrintTag("Altimeter lockout (s)", ALTIMETER_LOCKOUT_SECONDS);
+    sPrintTag("Max control deployment rate (dep/s)", CONTROL_MAX_DEPLOYMENT_PER_SECOND);
 }
 
 //Accepts config in string form and adds values to configValues

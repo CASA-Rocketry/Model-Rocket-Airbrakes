@@ -5,7 +5,7 @@
 #include "control/control.h"
 #include <cmath>
 
-#define WIND_TUNNEL false
+#define WIND_TUNNEL true
 
 
 Rocket::Rocket(){
@@ -112,7 +112,8 @@ void Rocket::addLogTags(){
     log.attachTag("State Estimation v", stateEstimator.v());
     log.attachTag("State Estimation a", stateEstimator.a());
 
-    log.attachTag("Servo deployment", brake.deployment);
+    log.attachTag("Commanded servo deployment", brake.commandedDeployment);
+    log.attachTag("Real servo deployment", brake.currentDeployment);
     //log.attachTag("Estimated apogee", [&] () -> double {return control::getApogee(stateEstimator.y(), stateEstimator.v(), )})
 
     
@@ -138,7 +139,7 @@ void Rocket::update(){
     }
 
     #if WIND_TUNNEL
-        udpateWindTunnel();
+        updateWindTunnel();
     #else
         updateFlightStates();
     #endif
