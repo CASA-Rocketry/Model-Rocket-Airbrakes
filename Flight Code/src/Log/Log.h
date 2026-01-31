@@ -35,6 +35,8 @@ public:
         if(std::is_same<T, bool>::value){
             //Bool to string
             stringGetter = [&]() {return valRef ? "T" : "F";};
+        // } else if(std::is_same<T, std::string>::value){
+        //     stringGetter = [&]() {return valRef;};
         } else {
             //Int/double/float to string
             stringGetter = [&]() {return std::to_string(valRef);};

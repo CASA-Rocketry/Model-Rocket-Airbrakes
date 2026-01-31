@@ -3,6 +3,10 @@
 #include "../hardware/Airbrake/Airbrake.h"
 #include "control.h"
 
+namespace control{
+    RateLimiter rateLimiter(0, 0);
+}
+
 //Computes apogee from given altitude, velocity, and cd
 //The rest of the constants are pulled from the config
 double control::getApogee(double y, double v, double deployment, Config& config){

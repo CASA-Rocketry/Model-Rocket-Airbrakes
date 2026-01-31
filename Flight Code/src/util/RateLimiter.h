@@ -10,7 +10,8 @@ private:
     unsigned long lastMillis; 
     double maxVelocityMillis; //delta val / delta t in ms
 public:
-    RateLimiter(double, double);
+    RateLimiter(double = 0, double = 0);
+    void setMaxVelocity(double);
     double get(double);
     void updateCurrent(double);
 };

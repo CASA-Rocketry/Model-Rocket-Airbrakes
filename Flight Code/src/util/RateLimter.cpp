@@ -1,6 +1,6 @@
 #include "RateLimiter.h"
 
-RateLimiter::RateLimiter(double initialVal, double maxVelocitySecond){
+RateLimiter::RateLimiter(double initialVal = 0, double maxVelocitySecond = 0){
     currentVal = initialVal;
     maxVelocityMillis = maxVelocitySecond / 1000;
     lastMillis = millis();

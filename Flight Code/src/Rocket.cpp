@@ -4,8 +4,11 @@
 #include "util/print.h"
 #include "control/control.h"
 #include <cmath>
+#if DEBUG
+    #include "util/Timer.h"
+#endif
 
-#define WIND_TUNNEL true
+#define WIND_TUNNEL false
 
 
 Rocket::Rocket(){
@@ -114,7 +117,11 @@ void Rocket::addLogTags(){
 
     log.attachTag("Commanded servo deployment", brake.commandedDeployment);
     log.attachTag("Real servo deployment", brake.currentDeployment);
-    //log.attachTag("Estimated apogee", [&] () -> double {return control::getApogee(stateEstimator.y(), stateEstimator.v(), )})
+
+    //Timing
+    log.attachTag("dt (us) (last cycle)", usDelta);
+    //log.attachTag("Process times (us)", Timer::logLine);
+    log.attachTag("Estimated apogee", [&] () -> std::string {return Timer::logLine;});
 
     
 
@@ -128,9 +135,17 @@ void Rocket::update(){
     usLast = usCurrent;
     usCurrent = micros();
     usDelta = usCurrent - usLast;
+    if(usDelta > 20000){
+        dPrint("Loop overrun: "); dPrintln(std::to_string(usDelta).c_str());
+    }
 
+    Timer::resetTime();
     readSensors(); //Inicludes calculation of all sensor quantities prior to KF fusion
+    Timer::endProcess("Read sensors");
+
+    Timer::resetTime();
     stateEstimator.update(altimeter.altitude, imu.globalAcceleration.z(), usDelta / 1000000.0);
+    Timer::endProcess("State estimator update");
 
     //Check for apogee (outside of modes in case of stating error)
     if(stateEstimator.y() > apogeeMeters){
@@ -149,7 +164,10 @@ void Rocket::update(){
     if(Trigger::getHoldState(ui.getButton(), 5000))
         end();
 
-    log.update();
+    Timer::resetTime();
+    log.update(); 
+    Timer::resetLogLine(); //Clear time stamp log for this cycle
+    Timer::endProcess("Log (last cycle)"); //Time for THIS cycle while be included in line for NEXT cycle
 }
 
 void Rocket::updateFlightStates(){
@@ -161,18 +179,28 @@ void Rocket::updateFlightStates(){
                 if(imu.globalAcceleration.z() >= config.LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED){
                     mode = BURNING;
                     usLaunch = usCurrent;
+                    dPrintln("IDLE -> BURNIGN");
                 }
+                #if DEBUG
+                    mode = BURNING;
+                    usLaunch = usCurrent;
+                    dPrintln("IDLE -> BURNIGN");
+                #endif
+
                 break; //Wait cycle to start
             case BURNING:
                 if(usCurrent - usLaunch > config.COAST_LOCKOUT_SECONDS * 1000 * 1000){
                     mode = COASTING;
                     control::startRateLimiter(config); //starts rate limiter at 0
+                    dPrintln("BURING -> COASTING");
                 }
                 break;
             case COASTING: //Also includes first several seconds of recovery so as to not prematurely switch modes
                 brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));
-                if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5)
-                    mode = RECOVERY;
+                    #if !DEBUG
+                    if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5)
+                        mode = RECOVERY;
+                    #endif
                 break;
             case RECOVERY:
                 log.flushSD();
@@ -181,6 +209,8 @@ void Rocket::updateFlightStates(){
                     mode = LANDED;
                     usLand = usCurrent;
                 }
+                break;
+            case LANDED:
                 break;
         }
 }

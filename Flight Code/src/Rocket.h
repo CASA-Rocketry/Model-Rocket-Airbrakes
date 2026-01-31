@@ -6,6 +6,7 @@
 #include "hardware/UI/UI.h"
 #include "control/StateEstimator.h"
 #include "util/Trigger.h"
+#include "util/print.h"
 
 class Rocket {
 private:
