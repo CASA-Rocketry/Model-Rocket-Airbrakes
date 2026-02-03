@@ -10,26 +10,28 @@ def plot_deployment(csv_path='sim_flight_data.csv', save_path='deployment_plot.p
         # Read the CSV file
         df = pd.read_csv(csv_path)
 
-        # Filter to only show data where control is active
-        df_filtered = df[df['Control_Active'] == 1].copy()
+        # Filter to only show data where control is active AND after coast lockout
+        config_instance = config() if callable(config) else config
+        coast_lockout = config_instance.burn_time
+        df_filtered = df[(df['Control_Active'] == 1) & (df['Time_s'] >= coast_lockout)].copy()
 
         if len(df_filtered) == 0:
-            print("Warning: No data points with Control_Active == 1 found.")
+            print(f"Warning: No data points with Control_Active == 1 after coast lockout ({coast_lockout}s) found.")
             return None
 
         # Extract relevant columns
         time = df_filtered['Time_s']
         deployment = df_filtered['Deployment']
         desired_deployment = df_filtered['Desired_Deployment']
-        airbrake_force = df_filtered['V_Sim'] ** 2 * 0.5 * config.air_density * config.airbrake_drag * (config.rocket_radius ** 2 * 3.1415) * deployment
-        error = df_filtered['Predicted_Apogee'] - config.target_apogee
+        airbrake_force = df_filtered['V_Sim'] ** 2 * 0.5 * config_instance.air_density * config_instance.airbrake_drag * (config_instance.rocket_radius ** 2 * 3.1415) * deployment
+        error = df_filtered['Error']  # Predicted apogee error with current deployment held constant
 
         # Create figure with subplots
         fig, ax1 = plt.subplots(1, 1, figsize=(12, 8), sharex=True)
 
         # Deployment comparison
-        ax1.plot(time, desired_deployment, 'b-', label='Desired Deployment', linewidth=2, alpha=0.8)
-        ax1.plot(time, deployment, 'c--', label='Actual Deployment', linewidth=1.5)
+        ax1.plot(time, desired_deployment, 'c--', label='Desired Deployment', linewidth=2, alpha=0.8)
+        ax1.plot(time, deployment, 'b-', label='Actual Deployment', linewidth=1.5)
         ax1.set_ylabel('Deployment (0-1)', color='blue')
         ax1.set_title('Airbrake Deployment Over Time', fontsize=14, fontweight='bold')
         ax1.legend(loc='best', fontsize=10)
@@ -79,16 +81,25 @@ def plot_deployment(csv_path='sim_flight_data.csv', save_path='deployment_plot.p
         return None
 
 
-def plot_deployment_with_altitude(csv_path='sim_flight_data.csv', save_path='deployment_altitude_plot.png'):
+def plot_deployment_with_altitude(csv_path='sim_flight_data.csv', save_path='deployment_altitude_plot.png', config=Config):
     try:
         # Read the CSV file
         df = pd.read_csv(csv_path)
 
-        # Extract relevant columns
-        time = df['Time_s']
-        deployment = df['Deployment']
-        desired_deployment = df['Desired_Deployment']
-        altitude = df['Alt_Sim']
+        # Get coast lockout time
+        config_instance = config() if callable(config) else config
+        coast_lockout = config_instance.burn_time
+
+        # Extract all altitude data (for full flight profile)
+        time_full = df['Time_s']
+        altitude_full = df['Alt_Sim']
+
+        # Filter deployment data to only after coast lockout
+        df_filtered = df[df['Time_s'] >= coast_lockout].copy()
+        time = df_filtered['Time_s']
+        deployment = df_filtered['Deployment']
+        desired_deployment = df_filtered['Desired_Deployment']
+        altitude = df_filtered['Alt_Sim']
 
         # Create figure with subplots
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
@@ -103,17 +114,20 @@ def plot_deployment_with_altitude(csv_path='sim_flight_data.csv', save_path='dep
         ax1.grid(True, alpha=0.3)
         ax1.set_ylim(-0.05, 1.05)
 
-        # Plot 2: Altitude
-        ax2.plot(time, altitude, 'g-', linewidth=2)
+        # Plot 2: Altitude (show full flight profile)
+        ax2.plot(time_full, altitude_full, 'g-', linewidth=2)
         ax2.set_xlabel('Time (s)', fontsize=12)
         ax2.set_ylabel('Altitude AGL (m)', fontsize=12, color='green')
         ax2.tick_params(axis='y', labelcolor='green')
         ax2.grid(True, alpha=0.3)
 
+        # Mark coast lockout time
+        ax2.axvline(x=coast_lockout, color='orange', linestyle='--', alpha=0.5, linewidth=1.5, label=f'Coast Lockout: {coast_lockout:.1f}s')
+
         # Mark apogee
-        apogee_idx = np.argmax(altitude)
-        apogee_time = time.iloc[apogee_idx]
-        apogee_alt = altitude.iloc[apogee_idx]
+        apogee_idx = np.argmax(altitude_full)
+        apogee_time = time_full.iloc[apogee_idx]
+        apogee_alt = altitude_full.iloc[apogee_idx]
         ax2.axvline(x=apogee_time, color='red', linestyle='--', alpha=0.5, label=f'Apogee: {apogee_alt:.1f}m')
         ax2.legend(loc='upper right', fontsize=10)
 

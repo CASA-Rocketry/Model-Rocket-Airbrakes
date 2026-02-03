@@ -46,31 +46,13 @@ class ControllerOptimizerPID(ControllerBase):
             method='bounded'
         )
 
-        deployment_opt = result.x
+        desired_deployment = result.x
 
-        error = deployment_opt - self.last_deployment
-        # Accumulate integral error with sliding window
-        self.i_error_list.append(error * dt)
-        if self.control_active and self.last_time > self.config.burn_time + 1.5:
-            # Only integrate when control is active and after motor burn + settling time
-            self.i_error = sum(self.i_error_list[-(self.frequency * self.i_window):])
-
-        # Calculate error derivative
-        d_error = (error - self.last_error) / dt
-        self.last_error = error
-
-        # Get PID gains from config
-        kp = self.config.kp
-        ki = self.config.ki
-        kd = self.config.kd
-
-        # Update desired deployment
-        deployment_change = (kp * error + ki * self.i_error + kd * d_error) * dt
-        deployment = self.last_deployment + deployment_change
-        deployment = np.clip(deployment, 0.0, 1.0)
-        self.last_desired_deployment = deployment
+        # Deadbanding
+        if abs(error_w_brake) < self.config.deadband:
+            desired_deployment = self.last_deployment
 
         # Clip to valid range
-        deployment = np.clip(deployment, 0.0, 1.0)
+        desired_deployment = np.clip(desired_deployment, 0.0, 1.0)
 
-        return deployment
+        return desired_deployment

@@ -19,12 +19,17 @@ animate_rocket_flight(
         str(assets_dir / 'brake_3.stl')
     ],
     airbrake_max_extension=0.0165,
-    output_path='flight.mp4',
-    csv_time_col='Time',
-    csv_altitude_col='Altitude',
-    csv_deployment_col='Deployment',
-    csv_velocity_col='Velocity',
-    csv_path='flight3.CSV',
+    csv_path=str(project_root / 'output' / 'real_flight_results.csv'),
+    output_path=str(project_root / 'output' / 'real_flight_animation.mp4'),
+    csv_time_col='time',
+    csv_altitude_col='filtered_altitude',
+    csv_deployment_col='Servo deployment_rate_limited',
+    csv_velocity_col='filtered_velocity',
+    csv_e0_col='IMU Quat W',
+    csv_e1_col='IMU Quat X',
+    csv_e2_col='IMU Quat Y',
+    csv_e3_col='IMU Quat Z',
     ground_size=500,
-    camera_option=1
+    camera_option=1,
+    fps=30
 )

@@ -36,17 +36,17 @@ def _get_csv_value(key, default, value_type=float):
 class Config:
     # Physical parameters
     rocket_radius = 0.028
-    dry_mass = 0.557 #0.573
-    burnout_mass = _get_csv_value("Burnout Mass (kg)", dry_mass + 0.027)
+    burnout_mass: float=_get_csv_value("Burnout Mass (kg)", 0.6)
+    dry_mass = burnout_mass - 0.049
     I_xx = 0.031  # Get from CAD file (kg-m3)
     I_yy = 0.031
     I_zz = 0.0001
-    com_no_motor = 0.3  # meters from nose
+    com_no_motor = 0.38 # meters from nose
 
     # Motor parameters
     chamber_radius = 0.0145
     chamber_height = 0.083
-    motor_position = 0.77
+    motor_position = 0.772
 
     # Nosecone parameters
     nosecone_length = 0.13
@@ -59,8 +59,8 @@ class Config:
     n_fins = 4
     root_chord = 0.055 # all meters
     tip_chord = 0.03
-    span = 0.032
-    fin_position = 0.66
+    span = 0.0375
+    fin_position = 0.72
     cant_angle = 0
 
     # Chute - NOT CONFIGURED YET
@@ -72,10 +72,10 @@ class Config:
     env_elevation = 260 # meters from sea level
     latitude = 38
     longitude = 92
-    wind_speed = 1.5 # m/s
+    wind_speed = 3 # m/s
 
     # Sim parameters
-    sampling_rate: int = 20 # Control algorithm frequency
+    sampling_rate: int = 10 # Control algorithm frequency
     terminate_on_apogee = True
 
     # Accelerometer parameters - Set up for bno055
@@ -102,7 +102,7 @@ class Config:
     barometer_operating_temperature = 25.0  # Celsius
     barometer_temperature_bias = 0.0
     barometer_temperature_scale_factor = 0.0
-    barometer_position = 0.3  # meters from nose
+    barometer_position = 0.32  # meters from nose
 
     # Kalman filter params
     alt_std = _get_csv_value("Kalman Measurement Y STD", 0.26) # Meters for bmp390
@@ -114,20 +114,27 @@ class Config:
     use_airbrake = _get_csv_value("Airbrakes Enabled (T/F)", True, bool)
 
     # Control algorithm selection
-    control_algorithm = "OPTIMIZERPID" # BANGBANG, PID, OPTIMIZER, OPTIMIZERPID
+    control_algorithm = "OPTIMIZERPID" # BANGBANG, PID, OPTIMIZER, OPTIMIZERPID, FILE
+
+    # File-based controller parameters (only used if control_algorithm = "FILE")
+    deployment_file_path = "output/real_flight_results_with_thrust.csv"
+    deployment_file_time_col = None
+    deployment_file_deployment_col = None
+    deployment_file_time_unit = None
+    state_estimation = "KALMAN" # KALMAN, ALTIMETER, ACCELEROMETER
 
     # Control parameters
-    kp = 4 # Set up for CD PID. For apogee PID: _get_csv_value("KP (1/s)", 0.24)
-    ki = 2 #0.01 for apogee PID
+    kp = 0.24 # Set up for CD PID. For apogee PID: _get_csv_value("KP (1/s)", 0.24)
+    ki = 0.0 #0.01 for apogee PID
     kd = 0
-    deadband = 0 # Meters
+    deadband = 0.2 # Meters
     i_window = 1 # seconds
     apogee_offset = 1.87 # Meters. Accounts for difference between avionics altitude model and rocketpy one
 
     # Controller parameters
     max_deployment_rate = 2.5   # deployment / time
     apogee_prediction_cd = _get_csv_value("Rocket CD", 0.71)   # Should match the rocket drag curve. Based on 4th flight of rocket 0.71
-    airbrake_drag = _get_csv_value("Airbrake CD", 0.8)    # Max Cd from airbrake. Needs to match airbrake drag curve 0.35
+    airbrake_drag = _get_csv_value("Airbrake CD", 0.8)    # Max Cd from airbrake. Needs to match airbrake drag curve
 
     # Timing parameters
     burn_time = _get_csv_value("Coast Lockout (s)", 1.3)
@@ -139,8 +146,12 @@ class Config:
 
     # Monte carlo
     impulse_std = 0.35 # Ns - Based on data from https://www.thrustcurve.org/motors/cert/62d80c95ac50e90004732ded/F42.pdf
-    mass_std = 0.001 # kg
-    com_std = 0.005 # m
-    wind_std = (1, 2.5) # (nominal multiplier, std)
+    mass_std = 0 #0.001 # kg
+    com_std = 0 #0.005 # m
+    # Wind distribution options:
+    # Normal distribution: wind_std = (nominal_multiplier, std)
+    # Uniform distribution: wind_std = (min_value, max_value, "uniform")
+    wind_std = (0, 4, "uniform") # Normal distribution: multiplier=1, std=2
+    # wind_std = (0, 5, "uniform") # Example: uniform distribution from 0 to 5 m/s
     rocket_cd_std = 0.05
     airbrake_cd_std = 0.1

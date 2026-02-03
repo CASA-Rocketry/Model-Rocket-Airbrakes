@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 from rocketpy import MonteCarlo
 from rocketpy.stochastic import (
     StochasticEnvironment,
@@ -98,8 +99,8 @@ class CustomStochasticRocket(StochasticRocket):
 
         return new_rocket
 
-
 def run_monte_carlo(config, num_simulations=100):
+    start_time = time.time()
     nominal_controller = Control(config)
     environment = setup_environment(config)
     rocket, motor = setup_rocket(config, nominal_controller.controller)
@@ -114,12 +115,25 @@ def run_monte_carlo(config, num_simulations=100):
         terminate_on_apogee=config.terminate_on_apogee
     )
 
-    wind_multiplier, wind_std = config.wind_std
-    stochastic_env = StochasticEnvironment(
-        environment=environment,
-        wind_velocity_x_factor=(wind_multiplier, wind_std),
-        wind_velocity_y_factor=(wind_multiplier, wind_std),
-    )
+    # Wind configuration: supports both normal and uniform distributions
+    # For normal: wind_std = (multiplier, std)
+    # For uniform: wind_std = (min, max, "uniform")
+    if len(config.wind_std) == 3 and config.wind_std[2] == "uniform":
+        # Uniform distribution: (min, max, "uniform")
+        wind_min, wind_max = config.wind_std[0], config.wind_std[1]
+        stochastic_env = StochasticEnvironment(
+            environment=environment,
+            wind_velocity_x_factor=(wind_min, wind_max, "uniform"),
+            wind_velocity_y_factor=(wind_min, wind_max, "uniform"),
+        )
+    else:
+        # Normal distribution: (multiplier, std)
+        wind_multiplier, wind_std = config.wind_std
+        stochastic_env = StochasticEnvironment(
+            environment=environment,
+            wind_velocity_x_factor=(wind_multiplier, wind_std),
+            wind_velocity_y_factor=(wind_multiplier, wind_std),
+        )
 
     nominal_impulse = motor.total_impulse
     stochastic_motor = StochasticGenericMotor(
@@ -201,8 +215,10 @@ def run_monte_carlo(config, num_simulations=100):
 
     monte_carlo.simulate(number_of_simulations=num_simulations, append=False)
 
-    return monte_carlo
+    end_time = time.time()
+    wall_time = end_time - start_time
 
+    return monte_carlo, wall_time
 
 def create_plot(monte_carlo, config):
     output_dir = Path("output")
@@ -275,6 +291,7 @@ def create_plot(monte_carlo, config):
 
     # Create deployment overlay plot
     if 'deployment_timeseries' in monte_carlo.results:
+        plt.rcParams.update({'font.size': 12})
         fig_deployment, ax_deployment = plt.subplots(1, 1, figsize=(10, 6))
 
         deployment_data = monte_carlo.results['deployment_timeseries']
@@ -285,26 +302,335 @@ def create_plot(monte_carlo, config):
                 time = sim_data['time']
                 deployment = sim_data['deployment']
                 if len(time) > 0 and len(deployment) > 0:
-                    ax_deployment.plot(time, deployment, alpha=0.3, linewidth=0.8, color='blue')
+                    ax_deployment.plot(time, deployment, alpha=0.3, linewidth=2, color='blue')
 
         ax_deployment.set_xlabel('Time (s)')
         ax_deployment.set_ylabel('Deployment (0-1)')
-        ax_deployment.set_title('Airbrake Deployment Over Time - All Monte Carlo Simulations')
+        ax_deployment.set_title('Airbrake Deployments Over Time')
         ax_deployment.grid(True, alpha=0.3)
         ax_deployment.set_ylim(-0.05, 1.05)
+        plt.xlim(-0.25, 6.25)
+        plt.plot()
+        plt.show()
 
         plt.tight_layout()
         deployment_plot_path = output_dir / "monte_carlo_deployment_overlay.png"
         plt.savefig(deployment_plot_path, dpi=150, bbox_inches='tight')
         plt.close('all')
 
+def compare_monte_carlo(num):
+    config = Config()
+
+    # Run Monte Carlo simulations with different control algorithms
+    print("Running Monte Carlo with BANGBANG controller...")
+    config.control_algorithm = "BANGBANG"
+    monte_carlo1, wall_time1 = run_monte_carlo(config=config, num_simulations=num)
+
+    print("Running Monte Carlo with OPTIMIZERPID controller...")
+    config.control_algorithm = "OPTIMIZERPID"
+    monte_carlo2, wall_time2 = run_monte_carlo(config=config, num_simulations=num)
+
+    print("Running Monte Carlo with PID controller...")
+    config.control_algorithm = "PID"
+    monte_carlo3, wall_time3 = run_monte_carlo(config=config, num_simulations=num)
+
+    output_dir = Path("output")
+    output_dir.mkdir(exist_ok=True)
+
+    # Extract apogees for each algorithm
+    apogees_agl_1 = np.array(monte_carlo1.results['apogee']) - config.env_elevation
+    apogees_agl_2 = np.array(monte_carlo2.results['apogee']) - config.env_elevation
+    apogees_agl_3 = np.array(monte_carlo3.results['apogee']) - config.env_elevation
+
+    # Export comparison data to CSV
+    import pandas as pd
+
+    # Create dataframes for each algorithm
+    df1 = pd.DataFrame({
+        'Simulation': range(1, len(apogees_agl_1) + 1),
+        'Algorithm': 'BANGBANG',
+        'Apogee_AGL_m': apogees_agl_1,
+        'Error_m': apogees_agl_1 - (config.target_apogee - config.apogee_offset),
+    })
+
+    df2 = pd.DataFrame({
+        'Simulation': range(1, len(apogees_agl_2) + 1),
+        'Algorithm': 'SOLVER',
+        'Apogee_AGL_m': apogees_agl_2,
+        'Error_m': apogees_agl_2 - (config.target_apogee - config.apogee_offset),
+    })
+
+    df3 = pd.DataFrame({
+        'Simulation': range(1, len(apogees_agl_3) + 1),
+        'Algorithm': 'INTEGRATOR',
+        'Apogee_AGL_m': apogees_agl_3,
+        'Error_m': apogees_agl_3 - (config.target_apogee - config.apogee_offset),
+    })
+
+    # Add max deployment if available
+    if 'max_airbrake_deployment' in monte_carlo1.results:
+        df1['Max_Deployment'] = monte_carlo1.results['max_airbrake_deployment']
+    if 'max_airbrake_deployment' in monte_carlo2.results:
+        df2['Max_Deployment'] = monte_carlo2.results['max_airbrake_deployment']
+    if 'max_airbrake_deployment' in monte_carlo3.results:
+        df3['Max_Deployment'] = monte_carlo3.results['max_airbrake_deployment']
+
+    # Combine all dataframes
+    df_combined = pd.concat([df1, df2, df3], ignore_index=True)
+
+    # Save to CSV
+    csv_path = output_dir / "monte_carlo_comparison_2.csv"
+    df_combined.to_csv(csv_path, index=False)
+    print(f"\nComparison data saved to: {csv_path}")
+
+    # Create combined apogee distribution plot
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+
+    # Apogee distribution with fixed bin width
+    bin_width = 0.05  # meters
+    bin_edges = np.arange(config.target_apogee - 5,
+                          config.target_apogee + 5 + bin_width,
+                          bin_width)
+
+    # Plot histograms for all three algorithms
+    ax.hist(apogees_agl_1, bins=bin_edges, edgecolor='black', alpha=0.5, label='BANGBANG', color='blue')
+    ax.hist(apogees_agl_2, bins=bin_edges, edgecolor='black', alpha=0.5, label='SOLVER', color='green')
+    ax.hist(apogees_agl_3, bins=bin_edges, edgecolor='black', alpha=0.5, label='INTEGRATOR', color='orange')
+
+    # Plot target and mean lines
+    ax.axvline(config.target_apogee - config.apogee_offset, color='r', linestyle='--', linewidth=2, label='Target')
+    ax.axvline(np.mean(apogees_agl_1), color='blue', linestyle=':', linewidth=2, alpha=0.7)
+    ax.axvline(np.mean(apogees_agl_2), color='green', linestyle=':', linewidth=2, alpha=0.7)
+    ax.axvline(np.mean(apogees_agl_3), color='orange', linestyle=':', linewidth=2, alpha=0.7)
+
+    ax.set_xlabel('Apogee (m AGL)')
+    ax.set_ylabel('Frequency')
+    ax.set_title('Apogee Distribution Comparison - Control Algorithms')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    # Set fixed x-axis limits centered around target apogee
+    ax.set_xlim(config.target_apogee - 5 - config.apogee_offset, config.target_apogee + 5 - config.apogee_offset)
+
+    plt.tight_layout()
+    plot_path = output_dir / "monte_carlo_comparison_apogee.png"
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    plt.close()
+
+    # Create combined deployment overlay plot
+    if 'deployment_timeseries' in monte_carlo1.results:
+        plt.rcParams.update({'font.size': 12})
+        fig_deployment, ax_deployment = plt.subplots(1, 1, figsize=(14, 6))
+
+        # Plot BANGBANG deployments
+        deployment_data_1 = monte_carlo1.results['deployment_timeseries']
+        for i, sim_data in enumerate(deployment_data_1):
+            if sim_data and 'time' in sim_data and 'deployment' in sim_data:
+                time = sim_data['time']
+                deployment = sim_data['deployment']
+                if len(time) > 0 and len(deployment) > 0:
+                    ax_deployment.plot(time, deployment, alpha=0.2, linewidth=1.5, color='blue',
+                                      label='BANGBANG' if i == 0 else '')
+
+        # Plot OPTIMIZERPID deployments
+        deployment_data_2 = monte_carlo2.results['deployment_timeseries']
+        for i, sim_data in enumerate(deployment_data_2):
+            if sim_data and 'time' in sim_data and 'deployment' in sim_data:
+                time = sim_data['time']
+                deployment = sim_data['deployment']
+                if len(time) > 0 and len(deployment) > 0:
+                    ax_deployment.plot(time, deployment, alpha=0.2, linewidth=1.5, color='green',
+                                      label='OPTIMIZERPID' if i == 0 else '')
+
+        # Plot PID deployments
+        deployment_data_3 = monte_carlo3.results['deployment_timeseries']
+        for i, sim_data in enumerate(deployment_data_3):
+            if sim_data and 'time' in sim_data and 'deployment' in sim_data:
+                time = sim_data['time']
+                deployment = sim_data['deployment']
+                if len(time) > 0 and len(deployment) > 0:
+                    ax_deployment.plot(time, deployment, alpha=0.2, linewidth=1.5, color='orange',
+                                      label='PID' if i == 0 else '')
+
+        ax_deployment.set_xlabel('Time (s)')
+        ax_deployment.set_ylabel('Deployment (0-1)')
+        ax_deployment.set_title('Airbrake Deployments Over Time - Control Algorithm Comparison')
+        ax_deployment.legend()
+        ax_deployment.grid(True, alpha=0.3)
+        ax_deployment.set_ylim(-0.05, 1.05)
+        ax_deployment.set_xlim(-0.25, 6.25)
+
+        plt.tight_layout()
+        deployment_plot_path = output_dir / "monte_carlo_comparison_deployment.png"
+        plt.savefig(deployment_plot_path, dpi=150, bbox_inches='tight')
+        plt.close('all')
+
+    # Print statistics
+    print("\n=== Monte Carlo Comparison Results ===")
+    print(f"\nBANGBANG:")
+    print(f"  Mean Apogee: {np.mean(apogees_agl_1):.2f} m")
+    print(f"  Std Dev: {np.std(apogees_agl_1):.2f} m")
+    print(f"  Mean Error: {np.mean(apogees_agl_1) - (config.target_apogee - config.apogee_offset):.2f} m")
+    print(f"  Wall Time: {wall_time1:.2f} s")
+
+    print(f"\nOPTIMIZERPID:")
+    print(f"  Mean Apogee: {np.mean(apogees_agl_2):.2f} m")
+    print(f"  Std Dev: {np.std(apogees_agl_2):.2f} m")
+    print(f"  Mean Error: {np.mean(apogees_agl_2) - (config.target_apogee - config.apogee_offset):.2f} m")
+    print(f"  Wall Time: {wall_time2:.2f} s")
+
+    print(f"\nPID:")
+    print(f"  Mean Apogee: {np.mean(apogees_agl_3):.2f} m")
+    print(f"  Std Dev: {np.std(apogees_agl_3):.2f} m")
+    print(f"  Mean Error: {np.mean(apogees_agl_3) - (config.target_apogee - config.apogee_offset):.2f} m")
+    print(f"  Wall Time: {wall_time3:.2f} s")
+
+    print(f"\nOutput files:")
+    print(f"  - {output_dir / 'monte_carlo_comparison_2.csv'}")
+    print(f"  - {output_dir / 'monte_carlo_comparison_apogee.png'}")
+    print(f"  - {output_dir / 'monte_carlo_comparison_deployment.png'}")
+
+
+def plot_comparison_from_csv(csv_filename="monte_carlo_comparison.csv"):
+    """
+    Plot comparison data from CSV file using step histograms
+
+    Parameters:
+    -----------
+    csv_filename : str
+        Name of the CSV file in the output directory (default: "monte_carlo_comparison.csv")
+    """
+    import pandas as pd
+
+    config = Config()
+    output_dir = Path("output")
+    csv_path = output_dir / csv_filename
+
+    # Read the CSV file
+    if not csv_path.exists():
+        print(f"Error: CSV file not found at {csv_path}")
+        return
+
+    df = pd.read_csv(csv_path)
+
+    # Separate data by algorithm
+    df_bangbang = df[df['Algorithm'] == 'BANGBANG']
+    df_solver = df[df['Algorithm'] == 'SOLVER']
+    df_integrator = df[df['Algorithm'] == 'INTEGRATOR']
+
+    apogees_agl_1 = df_bangbang['Apogee_AGL_m'].values + config.apogee_offset
+    apogees_agl_2 = df_solver['Apogee_AGL_m'].values + config.apogee_offset
+    apogees_agl_3 = df_integrator['Apogee_AGL_m'].values + config.apogee_offset
+
+    # Calculate statistics for each algorithm
+    mean_1, std_1 = np.mean(apogees_agl_1), np.std(apogees_agl_1)
+    mean_2, std_2 = np.mean(apogees_agl_2), np.std(apogees_agl_2)
+    mean_3, std_3 = np.mean(apogees_agl_3), np.std(apogees_agl_3)
+
+    # Create step histogram plot
+    fig, ax = plt.subplots(1, 1, figsize=(18, 6))
+
+    # Apogee distribution with fixed bin width
+    bin_width = 0.2  # meters
+    # Determine bin range based on actual data
+    all_apogees = np.concatenate([apogees_agl_1, apogees_agl_2, apogees_agl_3])
+    data_min = np.min(all_apogees)
+    data_max = np.max(all_apogees)
+    bin_edges = np.arange(np.floor(data_min) - 1,
+                          np.ceil(data_max) + 1 + bin_width,
+                          bin_width)
+
+    # Plot filled transparent histograms for all three algorithms with stats in labels
+    ax.hist(apogees_agl_1, bins=bin_edges, histtype='stepfilled', linewidth=2,
+            alpha=0.4, label=f'BANGBANG (μ={mean_1:.2f}m, σ={std_1:.2f}m)',
+            color='blue', edgecolor='blue')
+    ax.hist(apogees_agl_3, bins=bin_edges, histtype='stepfilled', linewidth=2,
+            alpha=0.4, label=f'INTEGRATOR (μ={mean_3:.2f}m, σ={std_3:.2f}m)',
+            color='orange', edgecolor='orange')
+    ax.hist(apogees_agl_2, bins=bin_edges, histtype='stepfilled', linewidth=2,
+            alpha=0.4, label=f'SOLVER (μ={mean_2:.2f}m, σ={std_2:.2f}m)',
+            color='green', edgecolor='green')
+
+    # Plot target and mean lines
+    target_apogee = config.target_apogee
+    ax.axvline(target_apogee, color='r',
+               linestyle='--', linewidth=2)
+    ax.axvline(mean_1, color='blue', linestyle=':',
+               linewidth=2, alpha=0.7)
+    ax.axvline(mean_2, color='green', linestyle=':',
+               linewidth=2, alpha=0.7)
+    ax.axvline(mean_3, color='orange', linestyle=':',
+               linewidth=2, alpha=0.7)
+
+    ax.set_xlabel('Apogee (m AGL)', fontsize=16)
+    ax.set_ylabel('Frequency', fontsize=16)
+    ax.set_title('Comparison of Control Algorithm Apogee Distribution', fontsize=18)
+    ax.legend(fontsize=14)
+    ax.grid(True, alpha=0.3)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+
+    # Set x-axis limits to match bin edges
+    ax.set_xlim(bin_edges[0], bin_edges[-1])
+
+    # Add text labels on the graph for mean and target lines
+    y_pos = ax.get_ylim()[1] * 0.95  # Position near top of plot
+    ax.text(target_apogee, y_pos, f'Target\n{target_apogee:.2f}m',
+            color='r', ha='center', va='top', fontsize=14, fontweight='bold',
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='red', alpha=0.8),
+            clip_on=False)
+
+    # Offset mean labels vertically to prevent overlap
+    ax.text(mean_1, y_pos * 0.40, f'BB μ\n{mean_1:.2f}m',
+            color='blue', ha='center', va='top', fontsize=13,
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='blue', alpha=0.7),
+            clip_on=False)
+    ax.text(mean_2, y_pos * 0.70, f'Solver μ\n{mean_2:.2f}m',
+            color='green', ha='center', va='top', fontsize=13,
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='green', alpha=0.7),
+            clip_on=False)
+    ax.text(mean_3, y_pos * 0.55, f'Int μ\n{mean_3:.2f}m',
+            color='orange', ha='center', va='top', fontsize=13,
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='orange', alpha=0.7),
+            clip_on=False)
+
+    plt.tight_layout()
+    plot_path = output_dir / "monte_carlo_comparison_step_histogram.png"
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight', pad_inches=0.2)
+    plt.plot()
+    plt.show()
+    plt.close()
+
+    # Print statistics
+    print("\n=== Monte Carlo Comparison Results (from CSV) ===")
+    print(f"\nBANGBANG:")
+    print(f"  Mean Apogee: {np.mean(apogees_agl_1):.2f} m")
+    print(f"  Std Dev: {np.std(apogees_agl_1):.2f} m")
+    print(f"  Mean Error: {np.mean(apogees_agl_1) - config.target_apogee:.2f} m")
+
+    print(f"\nSOLVER:")
+    print(f"  Mean Apogee: {np.mean(apogees_agl_2):.2f} m")
+    print(f"  Std Dev: {np.std(apogees_agl_2):.2f} m")
+    print(f"  Mean Error: {np.mean(apogees_agl_2) - config.target_apogee:.2f} m")
+
+    print(f"\nINTEGRATOR:")
+    print(f"  Mean Apogee: {np.mean(apogees_agl_3):.2f} m")
+    print(f"  Std Dev: {np.std(apogees_agl_3):.2f} m")
+    print(f"  Mean Error: {np.mean(apogees_agl_3) - config.target_apogee:.2f} m")
+
+    print(f"\nPlot saved to: {plot_path}")
+
 
 if __name__ == "__main__":
+
     config = Config()
-    monte_carlo = run_monte_carlo(config=config, num_simulations=1000)
-    create_plot(monte_carlo, config)
-    std = np.std(monte_carlo.results['apogee'])
-    print(f"Standard deviation: {std} m")
-    average_apogee = sum(monte_carlo.results['apogee']) / len(monte_carlo.results['apogee'])
-    average_error = average_apogee - config.target_apogee + config.apogee_offset - config.env_elevation
-    print(f"Average error: {average_error} m")
+    #compare_monte_carlo(num=100)
+    plot_comparison_from_csv("monte_carlo_comparison.csv")
+
+    #monte_carlo, wall_time = run_monte_carlo(config=config, num_simulations=10)
+    #create_plot(monte_carlo, config)
+    #std = np.std(monte_carlo.results['apogee'])
+    #print(f"Standard deviation: {std} m")
+    #average_apogee = sum(monte_carlo.results['apogee']) / len(monte_carlo.results['apogee'])
+    #average_error = average_apogee - config.target_apogee + config.apogee_offset - config.env_elevation
+    #print(f"Average error: {average_error} m")
+    #print(f"Wall time: {wall_time}")

@@ -109,6 +109,14 @@ def animate_rocket_flight(
         csv_altitude_col='altitude',
         csv_deployment_col='deployment',
         csv_velocity_col='velocity',
+        csv_x_col=None,
+        csv_y_col=None,
+        csv_vx_col=None,
+        csv_vy_col=None,
+        csv_e0_col=None,
+        csv_e1_col=None,
+        csv_e2_col=None,
+        csv_e3_col=None,
         fps=30,
         duration=None,
         output_path='flight.mp4',
@@ -181,20 +189,50 @@ def animate_rocket_flight(
         deployment_time = time
         deployment_values = np.array(df[csv_deployment_col]) * airbrake_max_extension
 
-        # No x/y position data - keep rocket at origin
-        x_pos = np.zeros_like(time)
-        y_pos = np.zeros_like(time)
+        # Load x/y position if columns provided, otherwise keep at origin
+        if csv_x_col is not None and csv_x_col in df.columns:
+            x_pos = np.array(df[csv_x_col])
+            print(f"  Loaded X position from column: {csv_x_col}")
+        else:
+            x_pos = np.zeros_like(time)
 
-        # Get velocity data (only vertical component available)
-        vx = np.zeros_like(time)
-        vy = np.zeros_like(time)
+        if csv_y_col is not None and csv_y_col in df.columns:
+            y_pos = np.array(df[csv_y_col])
+            print(f"  Loaded Y position from column: {csv_y_col}")
+        else:
+            y_pos = np.zeros_like(time)
+
+        # Load velocity components if columns provided
+        if csv_vx_col is not None and csv_vx_col in df.columns:
+            vx = np.array(df[csv_vx_col])
+            print(f"  Loaded X velocity from column: {csv_vx_col}")
+        else:
+            vx = np.zeros_like(time)
+
+        if csv_vy_col is not None and csv_vy_col in df.columns:
+            vy = np.array(df[csv_vy_col])
+            print(f"  Loaded Y velocity from column: {csv_vy_col}")
+        else:
+            vy = np.zeros_like(time)
+
         vz = np.array(df[csv_velocity_col])
 
-        # No rotation data - keep rocket vertical
-        e0 = np.ones_like(time)  # w component
-        e1 = np.zeros_like(time)  # x component
-        e2 = np.zeros_like(time)  # y component
-        e3 = np.zeros_like(time)  # z component
+        # Load quaternion rotation if columns provided, otherwise keep vertical
+        if (csv_e0_col is not None and csv_e0_col in df.columns and
+            csv_e1_col is not None and csv_e1_col in df.columns and
+            csv_e2_col is not None and csv_e2_col in df.columns and
+            csv_e3_col is not None and csv_e3_col in df.columns):
+            e0 = np.array(df[csv_e0_col])
+            e1 = np.array(df[csv_e1_col])
+            e2 = np.array(df[csv_e2_col])
+            e3 = np.array(df[csv_e3_col])
+            print(f"  Loaded quaternion rotation from columns: {csv_e0_col}, {csv_e1_col}, {csv_e2_col}, {csv_e3_col}")
+        else:
+            # Keep rocket vertical (no rotation)
+            e0 = np.ones_like(time)  # w component
+            e1 = np.zeros_like(time)  # x component
+            e2 = np.zeros_like(time)  # y component
+            e3 = np.zeros_like(time)  # z component
 
         print(f"Loaded {len(time)} data points from CSV")
         print(f"  Time range: {time[0]:.2f} to {time[-1]:.2f} s")

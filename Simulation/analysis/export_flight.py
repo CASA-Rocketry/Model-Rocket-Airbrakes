@@ -21,6 +21,7 @@ def export_to_csv(flight, controller, config):
             'Desired_Deployment': controller.data['desired_deployment'],
             'Predicted_Apogee': controller.data['predicted_apogee'],
             'Predicted_Apogee_No_Brake': controller.data['predicted_apogee_no_brake'],
+            'Error': controller.data['error'],
             'Control_Active': controller.data['control_active']
         })
 

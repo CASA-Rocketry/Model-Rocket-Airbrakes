@@ -7,10 +7,12 @@ from Simulation.analysis.plot_deployment import plot_deployment
 
 # Create instances
 config = Config()
+
 controller = Control(config)
 
 # Run simulation
 flight = run_simulation(config, controller)
+flight.all_info()
 export_to_csv(flight, controller, config)
 
 if flight is not None:
@@ -27,7 +29,7 @@ if flight is not None:
 else:
     print("Simulation failed!")
 
-plot_deployment("output/sim_flight_data.csv", "output/deployment.png")
+plot_deployment("output/sim_flight_data.csv", "output/deployment.png", config)
 
 animate_rocket_flight(
     rocket_body_path='animation_assets/red_parts.stl',

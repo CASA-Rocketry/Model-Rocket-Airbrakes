@@ -35,6 +35,10 @@ class ControllerBase(ABC):
         self.last_deployment = 0
         self.last_time = 0
         self.last_velocity = 0
+        self.calculated_v = 0
+        self.calculated_agl = 0
+        self.last_measurement_agl = 0
+        self.last_calculated_velocity = 0
         self.filter_init = False
         self.control_active = False
         self.kalman_filter = KalmanAltitudeFilter(self.config)
@@ -141,13 +145,38 @@ class ControllerBase(ABC):
             dt = 1 / self.config.sampling_rate
             self.last_time = time
 
-            # Call subclass's control algorithm
-            desired_deployment = self.compute_control(
-                filtered_y, filtered_v, filtered_a,
-                predicted_apogee_w_brake, predicted_apogee_no_brake,
-                error_w_brake, error_no_brake, dt
-            )
+            if self.config.state_estimation == "KALMAN":
 
+                desired_deployment = self.compute_control(
+                    filtered_y, filtered_v, filtered_a,
+                    predicted_apogee_w_brake, predicted_apogee_no_brake,
+                    error_w_brake, error_no_brake, dt
+                )
+
+            elif self.config.state_estimation == "ALTIMETER":
+
+                calculated_v = (measurement_agl - self.last_measurement_agl) / dt
+                calculated_a = (calculated_v - self.last_calculated_velocity) / dt
+
+                desired_deployment = self.compute_control(
+                    measurement_agl, calculated_v, calculated_a,
+                    predicted_apogee_w_brake, predicted_apogee_no_brake,
+                    error_w_brake, error_no_brake, dt
+                )
+
+                self.last_measurement_agl = measurement_agl
+                self.last_calculated_velocity = calculated_v
+
+            elif self.config.state_estimation == "ACCELEROMETER":
+
+                self.calculated_v += measurement_accel * dt
+                self.calculated_agl += self.calculated_v * dt
+
+                desired_deployment = self.compute_control(
+                    self.calculated_agl, self.calculated_v, measurement_accel,
+                    predicted_apogee_w_brake, predicted_apogee_no_brake,
+                    error_w_brake, error_no_brake, dt
+                )
             # Ensure desired deployment is in valid range
             desired_deployment = np.clip(desired_deployment, 0.0, 1.0)
 
