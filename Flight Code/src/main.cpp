@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include "Rocket/Rocket.h"
-#include "Log/print.h"
+#include "Rocket.h"
+#include "util/print.h"
 
 Rocket rocket;
 
@@ -11,12 +11,10 @@ void setup() {
           while(!Serial);
       #endif
   #endif
-  rocket.initialize();
+  rocket.setup();
 }
 
 void loop() {
   rocket.update();
-  //sPrintln("Hello");
-  delay(100);
 }
 

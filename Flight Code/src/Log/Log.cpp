@@ -1,62 +1,64 @@
 #include "Log.h"
-#include "print.h"
-#include "../hardwareMap.h"
+#include "../util/print.h"
+#include "../hardware/hardwareMap.h"
 #include <Arduino.h>
 #include <string>
-#include "../config.h"
+#include "../util/Config.hpp"
+#include "../hardware/UI/UI.h"
 #include <type_traits>
 
-void Log::initialize(){
+void Log::initialize(UI& ui){
+    sPrintln("Initializing log");
     pinMode(hardwareMap::SD_CD, INPUT);
 
     //Check card detect
     while(!hasCard()){
-        sPrintln("Please insert card");
+        sPrint("Please insert card -- ");
         delay(2000);
     }
-    sPrintln("Card detected");
+    sPrintln("\nCard detected");
 
     //Start SPI communications with SD card
     if(!SD.begin(hardwareMap::SD_CS)){
-        sPrintln("Couldn't communicate with SD card");
+        ui.startError("Couldn't communicate with SD card", 1);
         return;
     }
-    sPrintln("Able to read SD");
-
-    readConfig();
-    openLogFile();
-
-    printPreamble();
-    
-    if(config::SIMULATION);
-        //openSimFile();
+    sPrintln("Successful log initialization");
 }
 
-void Log::printPreamble(){
+void Log::printPreamble(std::string configString){
     //Log date and time of compile
     logPrintln(std::string("Code compiled on ") + __DATE__ + " at " + __TIME__);
-    
+    logPrintln(configString.c_str());
     //Store config in logFile
-    logPrintln(config::configString.c_str());
+    
+    //Grab optional user notes in necessary
+    // sPrint("Add any addition notes (max 1 line): ");
+    // #if SERIAL_ENABLED
+    //     while(Serial.available() == 0)
+    //         delay(10);
+    //     std::string additionalNotes = Serial.readString().c_str();
+    //     sPrintln(additionalNotes.c_str());
+    //     logPrintln("Additional notes: " + additionalNotes);
+    // #endif
     flushSD();
 }
 
 //Opens config file, reads all the data and sends to Config, then closes file
-void Log::readConfig(){
+void Log::readConfig(Config& config, UI& ui){
     configFile = SD.open("config.csv", FILE_READ);
         std::string configString;
         if(configFile){
             sPrintln("Opened config successfully");
             while (configFile.available()){
                 char newChar = configFile.read();
-                sPrint(newChar);
                 configString += newChar; //Add next character
             }
             sPrintln(configString.c_str());
-            config::configureConstants(configString);
-        } else {
-            sPrintln("Config file not found");
-        }
+            sPrintln("Finished printing config");
+            config.configureConstants(configString);
+        } else
+            ui.startError("Config file not found", 2);
     configFile.close();
 }
 
@@ -64,21 +66,18 @@ bool Log::hasCard(){
     return digitalRead(hardwareMap::SD_CD) == LOW; //grounded when card in
 }
 
-void Log::openLogFile(){
-    std::string baseName = config::LOG_NAME;
-    sPrintln(baseName.c_str());
+void Log::openLogFile(std::string baseName, UI& ui){
     std::string flightFileName;
     int counter = 0;
     do{
         flightFileName = baseName + std::to_string(counter) + ".CSV";
-        sPrintln(flightFileName.c_str());
         counter++;
     } while(SD.exists(flightFileName.c_str()));
     flightFile = SD.open(flightFileName.c_str(), FILE_WRITE);
     if(flightFile)
         sPrintln(("Successfully opened " + flightFileName + " for logging").c_str());
     else
-        sPrintln(("Could not open " + flightFileName + " for logging").c_str());
+        ui.startError("Could not open " + flightFileName + " for logging", 3);
 }
 
 
@@ -88,9 +87,13 @@ void Log::flushSD(){
 
 //Calls all the getters and updates logLine
 void Log::updateLogLine(){
-    for(int i = 0; i < logGetters.size(); i++){
+    for(size_t i = 0; i < logGetters.size(); i++){
         logLine.at(i) = logGetters.at(i)();
     }
+}
+
+void Log::close(){
+    flightFile.close();
 }
 
 //Writes logLine to SD card
@@ -117,7 +120,7 @@ void Log::attachTag(std::string name, std::function<std::string()> stringGetter)
 void Log::logPrintln(std::string line){
     flightFile.write(line.c_str());
     flightFile.write("\n");
-    #if PRINT_LOG_TO_SERIAL
+    #if PRINT_IN_FLIGHT
         sPrint("LOG -- ");
         sPrintln(line.c_str());
     #endif

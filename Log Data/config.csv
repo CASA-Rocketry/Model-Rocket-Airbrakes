@@ -1,6 +1,6 @@
 ﻿Simulation Mode (T/F),F
 Airbrakes Enabled (T/F),T
-Log File Name,Flight 
+Log File Name,W
 Sim File Name (if applicable),Sim
 Burnout Mass (kg),0.617
 Air Density (kg/m^3),1.18
@@ -16,3 +16,5 @@ Target Apogee (m),195
 Launch Acceleration Threshold (m/s^2),20
 Coast Lockout (s),1.5
 KP (1/s),0.24
+Altimeter Lockout (s),30
+Control Max Velocity (dep/s),2
