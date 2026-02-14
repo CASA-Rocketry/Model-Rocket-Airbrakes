@@ -30,27 +30,20 @@ bool UI::getButton(){
     return digitalRead(hardwareMap::BUTTON) == HIGH;
 }
 
-void UI::startError(std::string message, int code){
-    sPrint("Fatal ERROR ------ ");
-    sPrintln(message.c_str());
+void UI::startError(std::string message){
     setRed(HIGH);
     while(true){
-        //Single long beep
-        setTone(500, 2000);
-        setBlue(HIGH);
-        delay(2000);
-        setBlue(LOW);
-        delay(1000);
+        sPrint("FATAL ERROR ------ ");
+        sPrintln(message.c_str());
+
+        setTone(500, 2000); //Single long beep
+        delay(3000);
 
         //e.code shorter beeps
-        for(int i = 0; i < code; i++){
-            setTone(500, 500);
-            setBlue(HIGH);
-            delay(500);
-            setBlue(LOW);
-            delay(500);
+        for(int i = 0; i < 5; i++){
+            setTone(500, 300);
+            delay(600);
         }
-        delay(2000);
     }
 }
 

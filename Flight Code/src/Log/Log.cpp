@@ -8,57 +8,44 @@
 #include <type_traits>
 
 void Log::initialize(UI& ui){
-    sPrintln("Initializing log");
     pinMode(hardwareMap::SD_CD, INPUT);
 
-    //Check card detect
+    //Check card detect - wait until recieved, don't go into error mode
     while(!hasCard()){
-        sPrint("Please insert card -- ");
+        ui.setTone(500, 1000);
+        sPrint("Insert card -- ");
         delay(2000);
     }
     sPrintln("\nCard detected");
 
     //Start SPI communications with SD card
-    if(!SD.begin(hardwareMap::SD_CS)){
-        ui.startError("Couldn't communicate with SD card", 1);
-        return;
-    }
+    if(!SD.begin(hardwareMap::SD_CS))
+        ui.startError("Couldn't communicate with SD card");
     sPrintln("Successful log initialization");
 }
 
 void Log::printPreamble(std::string configString){
     //Log date and time of compile
     logPrintln(std::string("Code compiled on ") + __DATE__ + " at " + __TIME__);
-    logPrintln(configString.c_str());
-    //Store config in logFile
+    logPrintln(configString.c_str()); //Store config in logFile
     
-    //Grab optional user notes in necessary
-    // sPrint("Add any addition notes (max 1 line): ");
-    // #if SERIAL_ENABLED
-    //     while(Serial.available() == 0)
-    //         delay(10);
-    //     std::string additionalNotes = Serial.readString().c_str();
-    //     sPrintln(additionalNotes.c_str());
-    //     logPrintln("Additional notes: " + additionalNotes);
-    // #endif
     flushSD();
 }
 
 //Opens config file, reads all the data and sends to Config, then closes file
 void Log::readConfig(Config& config, UI& ui){
     configFile = SD.open("config.csv", FILE_READ);
-        std::string configString;
-        if(configFile){
-            sPrintln("Opened config successfully");
-            while (configFile.available()){
-                char newChar = configFile.read();
-                configString += newChar; //Add next character
-            }
-            sPrintln(configString.c_str());
-            sPrintln("Finished printing config");
-            config.configureConstants(configString);
-        } else
-            ui.startError("Config file not found", 2);
+    std::string configString;
+    if(configFile){
+        sPrintln("Opened config successfully");
+        while (configFile.available()){
+            char newChar = configFile.read();
+            configString += newChar; //Add next character
+        }
+        sPrintln("Finished reading config");
+        config.configureConstants(configString);
+    } else
+        ui.startError("Config file not found");
     configFile.close();
 }
 
@@ -77,7 +64,7 @@ void Log::openLogFile(std::string baseName, UI& ui){
     if(flightFile)
         sPrintln(("Successfully opened " + flightFileName + " for logging").c_str());
     else
-        ui.startError("Could not open " + flightFileName + " for logging", 3);
+        ui.startError("Could not open " + flightFileName + " for logging");
 }
 
 

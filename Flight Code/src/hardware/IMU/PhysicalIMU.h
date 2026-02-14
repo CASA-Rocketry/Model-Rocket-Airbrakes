@@ -9,7 +9,7 @@ private:
     
 public: 
     PhysicalIMU();
-    void initialize();
+    void initialize(UI&);
     void readValues();
     void calibrate();
     double getPitch();

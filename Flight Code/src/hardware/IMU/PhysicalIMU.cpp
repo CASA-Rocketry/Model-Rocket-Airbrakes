@@ -2,39 +2,33 @@
 #include "../../util/print.h"
 #include "../UI/UI.h"
 
-void PhysicalIMU::initialize(){
-    sPrintln("Initializing IMU");
+void PhysicalIMU::initialize(UI& ui){
     if(!orientationIMU.begin())
-        sPrintln("Error initializing orietnationIMU");
+        ui.startError("Couldn't initialize orientation IMU");
     else if(!accelerationIMU.begin())
-        sPrintln("Error initializing accelerationIMU");
+        ui.startError("Couldn't initialize orientation IMU");
     
     //Setup orientationIMU
     orientationIMU.setMode(OPERATION_MODE_IMUPLUS);
     orientationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
     orientationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
+    
+
+
 
     //Setup accelerationIMU
-    // accelerationIMU.setMode(OPERATION_MODE_CONFIG);
-    // delay(25);
-    // accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x01);
-    // accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::ACC_CONFIG, 0x13);
-    // accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x00);
-
-
-    accelerationIMU.setMode(OPERATION_MODE_ACCONLY);
-
-
+    accelerationIMU.setMode(OPERATION_MODE_CONFIG);
+    accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x01);
+    accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::ACC_CONFIG, 0x13); //Write acc config (normal mode = 000, 125hz = 100, 16g range = 11)
+    accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x00); //
 
     accelerationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
     accelerationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
-    //TODO: ensure high output frequency (~200 hz)
 
+    accelerationIMU.setMode(OPERATION_MODE_ACCONLY);
 
     //adafruit_bno055_offsets_t offsets{3, -12, -34, 35, -347, -224, 0, -2, -1, 1000, 1034};
     //bno.setSensorOffsets(offsets);
-
-
 
     dPrint("Orientation mode: "); dPrintln(orientationIMU.getMode());
     dPrint("Acceleration mode: "); dPrintln(accelerationIMU.getMode());

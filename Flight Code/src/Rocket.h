@@ -18,17 +18,16 @@ private:
         RECOVERY = 4, //Could split into multiple states if running time control
         LANDED = 5
     } mode;
+
     //Maing time tracking (us stands for micro seconds = 1/10^6 seconds)
     unsigned long usCurrent, usLast, usDelta; //usngiend long gives 2^32 / 10000 / 60 / 60 = 1.19 hours of run time
-    unsigned long usFrom30;
+    #if DEBUG
+        unsigned long usFrom30;
+    #endif
 
     //Secondary time stamps
     unsigned long usLaunch, usApogee, usLand;
     double apogeeMeters;
-
-    //UI Button management
-    bool buttonPrevious;
-    unsigned long usButtonStart;
     
     StateEstimator stateEstimator;
     Config config;
@@ -37,10 +36,16 @@ private:
     PhysicalIMU imu;
     Airbrake brake;
     UI ui;
+
     void addLogTags();
     void readSensors();
     void updateFlightStates();
+
+    #if DEBUG
     void updateWindTunnel();
+    void updateFlightStateForDebug();
+    #endif
+    
     void end();
 public:
     Rocket();

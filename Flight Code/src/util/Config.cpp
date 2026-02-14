@@ -4,7 +4,6 @@
 //Stores values to config from configValues
 void Config::fillConfig(std::string configValues[]){     
     SIMULATION = getBool(configValues[0]);
-    sPrintln("Simulation: " + SIMULATION);
     AIRBRAKES_ENABLED = getBool(configValues[1]);
 
     LOG_NAME = configValues[2];

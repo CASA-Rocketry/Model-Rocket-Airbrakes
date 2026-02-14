@@ -16,5 +16,5 @@ public:
     void setColor(int, int, int);
     double measureVoltage();
     void playRandomSong(int, int);
-    void startError(std::string, int);
+    void startError(std::string);
 };

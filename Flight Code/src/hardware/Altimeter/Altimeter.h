@@ -1,4 +1,5 @@
 #include "Adafruit_BMP3XX.h"
+#include "../UI/UI.h"
 
 //Abstract class to access physical and simulated altimeters
 class Altimeter {
@@ -10,14 +11,15 @@ public:
     virtual void initialize();
 };
 
-class PhysicalAltimeter : public Altimeter {
+class PhysicalAltimeter{
 private:
     Adafruit_BMP3XX bmp;
 public:
+    double altitude, temperature;
     double altitudeOffset;
-    void calibrate();
-    void readValues() override;
-    void initialize() override;
+    void calibrate(UI& ui);
+    void readValues();
+    void initialize(UI&);
 };
 
 class SimAltimeter : public Altimeter {

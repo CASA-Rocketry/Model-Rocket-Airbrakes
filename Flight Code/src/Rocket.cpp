@@ -15,15 +15,13 @@ Rocket::Rocket(){
     //Main time tracking
     usCurrent = usLast = usDelta = 0;
 
-    usFrom30 = 0;
+    #if DEBUG
+        usFrom30 = 0;
+    #endif
 
     //Secondary time stamps
     usLaunch = usApogee = usLand = 0;
     apogeeMeters = 0;
-
-    //UI Button management
-    buttonPrevious = false;
-    usButtonStart = 0;
 }
 
 Rocket::~Rocket(){
@@ -41,14 +39,12 @@ void Rocket::setup(){
 
     //All subsystem-specific print messages are included within their respective method
     ui.initialize();
-    ui.setTone(5000, 5000);
+    ui.setTone(4000, 1000); //Turn on beep
 
     //Log startup, read config, and preamble
     log.initialize(ui);
     log.readConfig(config, ui);
-    sPrintln("--------------------------------------------------- Raw Configuration");
-    sPrintln(config.configString.c_str());
-    sPrintln("------------------------------------------------ Parsed Configuration");
+    sPrintln("Parsed Configuration ------------------------------------------------");
     config.printCheck();
     sPrintln("---------------------------------------------------------------------");
     log.openLogFile(config.LOG_NAME, ui);
@@ -56,18 +52,16 @@ void Rocket::setup(){
 
     stateEstimator.fillFromConfig(config);
     
-    // if(config.SIMULATION);
-    //     //openSimFile();
-    altimeter.initialize();
-    imu.initialize();
+    altimeter.initialize(ui);
+    imu.initialize(ui);
     brake.initialize();
     if(config.AIRBRAKES_ENABLED)
         brake.enable();
     brake.test();
 
-    ui.setTone(2000, 5000);
-    sPrintln("Initialization COMPLETE");
-    ui.setColor(0, 0, 0);
+    ui.setTone(4000, 3000); //3s high tone for completion
+    sPrintln("Initialization COMPLETE --------------------------------------------");
+
     if(config.SIMULATION){
         sPrintln("Running in SIMULATION");
         ui.setBlue(1);
@@ -89,8 +83,8 @@ void Rocket::setup(){
     #if !DEBUG
         ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
     #endif
-    altimeter.calibrate();
-    ui.setTone(5000, 5000);
+    altimeter.calibrate(ui);
+    ui.setTone(4000, 5000); //5 sec success beep
     log.logPrintln("Calibration point: " + std::to_string(altimeter.altitudeOffset));
     
     addLogTags();
@@ -122,11 +116,11 @@ void Rocket::addLogTags(){
     log.attachTag("Real servo deployment", brake.currentDeployment);
 
     //Timing
-    //log.attachTag("dt (us) (last cycle)", usDelta);
-    //log.attachTag("Process times (us)", Timer::logLine);
-    //log.attachTag("Estimated apogee", [&] () -> std::string {return Timer::logLine;});
-
-    
+    #if DEBUG
+        log.attachTag("dt (us) (last cycle)", usDelta);
+        log.attachTag("Process times (us)", Timer::logLine);
+        log.attachTag("Estimated apogee", [&] () -> std::string {return Timer::logLine;});
+    #endif
 
     //Print headers
     log.writeLogLine();
@@ -138,9 +132,12 @@ void Rocket::update(){
     usLast = usCurrent;
     usCurrent = micros();
     usDelta = usCurrent - usLast;
-    if(usDelta > 30000){
-        dPrint("Loop overrun: "); dPrintln(std::to_string(usDelta).c_str());
-    }
+
+    #if DEBUG
+        if(usDelta > 30000){
+            dPrint("Loop overrun: "); dPrintln(std::to_string(usDelta).c_str());
+        }
+    #endif
 
     //Timer::resetTime();
     readSensors(); //Inicludes calculation of all sensor quantities prior to KF fusion
@@ -156,38 +153,7 @@ void Rocket::update(){
         usApogee = usCurrent;
     }
 
-    // //Change flight states every 30 seconds
-    // if(usCurrent % (30*1000*1000) < usFrom30){
-    //     //Advance flight mode by 1
-    //     dPrintln("Switching mode");
-    //     switch(mode){
-    //         case IDLE:
-    //             mode = BURNING;
-    //             break;
-    //         case BURNING:
-    //             mode = COASTING;
-    //             break;
-    //         case COASTING:
-    //             mode = RECOVERY;
-    //             break;
-    //         case RECOVERY:
-    //             mode = LANDED;
-    //             break;
-    //         case LANDED:
-    //             mode = IDLE;
-    //             break;
-    //     }
-    // }
-
-    //usFrom30 = usCurrent % (30 * 1000 * 1000);
-
-    #if WIND_TUNNEL
-        updateWindTunnel();
-    #else
-        //Timer::resetTime();
-        updateFlightStates();
-        //Timer::endProcess("Update flight states");
-    #endif
+    updateFlightStates();
 
     //Allow ending regardless of state, though it should occur in LANDED mode
     //5 second continuous hold to 
@@ -203,7 +169,7 @@ void Rocket::update(){
 void Rocket::updateFlightStates(){
     switch(mode){
             case SETUP:
-                ui.startError("update() called without rocket initialization", 4);
+                ui.startError("update() called without rocket initialization");
                 break;
             case IDLE:
                 if(imu.globalAcceleration.z() >= config.LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED){
@@ -251,6 +217,7 @@ void Rocket::updateFlightStates(){
         }
 }
 
+#if DEBUG
 void Rocket::updateWindTunnel(){
     //on for 30s, off for 30s, repeat
         if(usCurrent % (1000*1000*100) <= 1000*1000*20)
@@ -264,6 +231,34 @@ void Rocket::updateWindTunnel(){
         else
             brake.setDeployment(1);
 }
+
+void Rocket::updateFlightStateForDebug(){
+    //Change flight states every 30 seconds
+    if(usCurrent % (30*1000*1000) < usFrom30){
+        //Advance flight mode by 1
+        dPrintln("Switching mode");
+        switch(mode){
+            case IDLE:
+                mode = BURNING;
+                break;
+            case BURNING:
+                mode = COASTING;
+                break;
+            case COASTING:
+                mode = RECOVERY;
+                break;
+            case RECOVERY:
+                mode = LANDED;
+                break;
+            case LANDED:
+                mode = IDLE;
+                break;
+        }
+    }
+
+    usFrom30 = usCurrent % (30 * 1000 * 1000);
+}
+#endif
 
 void Rocket::end(){
     ui.setTone(500, 3000);
