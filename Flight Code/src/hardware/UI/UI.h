@@ -8,6 +8,7 @@ public:
     void initialize();
     bool getButton();
     void setTone(int, int);
+    void setTone(int);
     void stopTone();
     void setRed(int);
     void setBlue(int);

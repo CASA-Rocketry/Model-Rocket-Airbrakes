@@ -42,9 +42,9 @@ void control::startRateLimiter(Config& config){
 double control::computeDeployment(double y, double v, Config& config){
     //Check bounds 
     if(getApogee(y, v, 0, config) < config.TARGET_APOGEE_METERS)
-        return 0;
+        return rateLimiter.get(0);
     else if(getApogee(y, v, 1, config) > config.TARGET_APOGEE_METERS)
-        return 1;
+        return rateLimiter.get(1);
 
     double addition, deployment = 0;
     for(int digits = 1; digits <= 6; digits++){

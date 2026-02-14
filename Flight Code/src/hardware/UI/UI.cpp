@@ -58,6 +58,12 @@ void UI::setTone(int frequency, int duration){
     tone(hardwareMap::BUZZER, frequency, duration);
 }
 
+void UI::setTone(int frequency){
+    tone(hardwareMap::BUZZER, frequency);
+}
+
+
+
 void UI::setRed(int value){
     digitalWrite(hardwareMap::LED_RED, value);
 }

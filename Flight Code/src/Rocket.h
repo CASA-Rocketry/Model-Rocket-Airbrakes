@@ -20,6 +20,7 @@ private:
     } mode;
     //Maing time tracking (us stands for micro seconds = 1/10^6 seconds)
     unsigned long usCurrent, usLast, usDelta; //usngiend long gives 2^32 / 10000 / 60 / 60 = 1.19 hours of run time
+    unsigned long usFrom30;
 
     //Secondary time stamps
     unsigned long usLaunch, usApogee, usLand;

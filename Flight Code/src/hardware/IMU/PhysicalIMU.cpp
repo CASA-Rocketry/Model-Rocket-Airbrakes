@@ -15,7 +15,17 @@ void PhysicalIMU::initialize(){
     orientationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
 
     //Setup accelerationIMU
+    // accelerationIMU.setMode(OPERATION_MODE_CONFIG);
+    // delay(25);
+    // accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x01);
+    // accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::ACC_CONFIG, 0x13);
+    // accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x00);
+
+
     accelerationIMU.setMode(OPERATION_MODE_ACCONLY);
+
+
+
     accelerationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
     accelerationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
     //TODO: ensure high output frequency (~200 hz)
@@ -23,6 +33,8 @@ void PhysicalIMU::initialize(){
 
     //adafruit_bno055_offsets_t offsets{3, -12, -34, 35, -347, -224, 0, -2, -1, 1000, 1034};
     //bno.setSensorOffsets(offsets);
+
+
 
     dPrint("Orientation mode: "); dPrintln(orientationIMU.getMode());
     dPrint("Acceleration mode: "); dPrintln(accelerationIMU.getMode());
@@ -96,9 +108,11 @@ void PhysicalIMU::readValues(){
     quat = orientationIMU.getQuat();
     //dPrintln(accelerationIMU.getMode());
     rawLocalAcceleration = accelerationIMU.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_ACCELEROMETER);
+    //dPrintln(rawLocalAcceleration.z());
     gravityLocalAcceleration = orientationIMU.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_GRAVITY);
     localAcceleration = rawLocalAcceleration - gravityLocalAcceleration;
     globalAcceleration = quat.rotateVector(localAcceleration);
+    //sPrintln(globalAcceleration.z());
 }
 
 //Assumes values have been read already
