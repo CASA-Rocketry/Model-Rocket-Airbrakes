@@ -20,7 +20,7 @@ void PhysicalIMU::initialize(UI& ui){
     accelerationIMU.setMode(OPERATION_MODE_CONFIG);
     accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x01);
     accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::ACC_CONFIG, 0x13); //Write acc config (normal mode = 000, 125hz = 100, 16g range = 11)
-    accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x00); //
+    accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x00); \
 
     accelerationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
     accelerationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);

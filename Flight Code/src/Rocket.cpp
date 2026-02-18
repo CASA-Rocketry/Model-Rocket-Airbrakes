@@ -76,7 +76,7 @@ void Rocket::setup(){
     do {
         imu.readValues();
         delay(50);
-        dPrintln(imu.getPitch() * 180 / M_PI);
+       // sPrintln(imu.getPitch() * 180 / M_PI);
     } while (!Trigger::getHoldState(imu.getPitch() > 0.75 * M_PI, 5000));
     Trigger::reset();
 
@@ -175,7 +175,7 @@ void Rocket::updateFlightStates(){
                 if(imu.globalAcceleration.z() >= config.LAUNCH_ACCELERATION_METERS_PER_SECOND_SQUARED){
                     #if !DEBUG 
                         mode = BURNING; 
-                        ui.setTone(5000, 5000);
+                        ui.setTone(500); //We should never here this 
                     #endif
                     usLaunch = usCurrent;
                     //dPrintln("IDLE -> BURNING");
