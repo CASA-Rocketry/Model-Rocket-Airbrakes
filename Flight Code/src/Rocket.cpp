@@ -89,6 +89,7 @@ void Rocket::setup(){
     
     addLogTags();
     mode = IDLE;
+    log.setLogLocation(Log::LogLocation::FLASH);
 }
 
 void Rocket::addLogTags(){
@@ -198,8 +199,10 @@ void Rocket::updateFlightStates(){
                 // else 
                 //     brake.setDeployment(0);   
                 #if !DEBUG
-                    if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5)
+                    if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5){
                         mode = RECOVERY;
+                        log.transferFlashToSD(); //switch to SD logging is included 
+                    }
                 #endif
                 break;
             case RECOVERY:

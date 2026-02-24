@@ -21,7 +21,13 @@ void Log::initialize(UI& ui){
     //Start SPI communications with SD card
     if(!SD.begin(hardwareMap::SD_CS))
         ui.startError("Couldn't communicate with SD card");
-    sPrintln("Successful log initialization");
+
+
+    //Open flash
+    if(!flash.begin(FLASH_SPACE_BYTES))
+        ui.startError("Couldn't start flash");
+
+    sPrintln("Successful log (SD & flash) initialization");
 }
 
 void Log::printPreamble(std::string configString){
@@ -65,6 +71,11 @@ void Log::openLogFile(std::string baseName, UI& ui){
         sPrintln(("Successfully opened " + flightFileName + " for logging").c_str());
     else
         ui.startError("Could not open " + flightFileName + " for logging");
+    logLocation = MICRO_SD;
+}
+
+void Log::setLogLocation(LogLocation location){
+    logLocation = location;
 }
 
 
@@ -105,10 +116,19 @@ void Log::attachTag(std::string name, std::function<std::string()> stringGetter)
 
 //Prints single line in log, no \n needed in string
 void Log::logPrintln(std::string line){
-    flightFile.write(line.c_str());
-    flightFile.write("\n");
+    if(logLocation == MICRO_SD){
+        flightFile.write(line.c_str());
+        flightFile.write("\n");
+    } else {
+        //TODO: log to flash
+    }
     #if PRINT_IN_FLIGHT
         sPrint("LOG -- ");
         sPrintln(line.c_str());
     #endif
+}
+
+void Log::transferFlashToSD(){
+    logLocation = MICRO_SD;
+
 }
