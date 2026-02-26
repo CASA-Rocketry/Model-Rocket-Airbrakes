@@ -1,5 +1,5 @@
 #include <SPI.h>
-#include <SD.h>
+#include <SdFat.h>
 #include "hardware/hardwareMap.h"
 #include <Arduino.h>
 #include <string>
@@ -13,7 +13,8 @@
 class Log{
 private:
     //LittleFS_Program flash;
-    SDLib::File flightFile, simFile, configFile;
+    SdFat32 SD;
+    FatFile flightFile, simFile, configFile;
     std::vector<std::string> logLine;
     std::vector<std::function<std::string()>> logGetters;
     int valuesAttached = 0; //tracks number of logLine entries that have been attached

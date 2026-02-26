@@ -116,12 +116,15 @@ void Log::attachTag(std::string name, std::function<std::string()> stringGetter)
 
 //Prints single line in log, no \n needed in string
 void Log::logPrintln(std::string line){
-    if(logLocation == MICRO_SD){
+    switch(logLocation){
+    case MICRO_SD:
         flightFile.write(line.c_str());
         flightFile.write("\n");
-    } else {
-        //TODO: log to flash
+        break;
+    default:
+        break;
     }
+    
     #if PRINT_IN_FLIGHT
         sPrint("LOG -- ");
         sPrintln(line.c_str());
@@ -130,5 +133,4 @@ void Log::logPrintln(std::string line){
 
 void Log::transferFlashToSD(){
     logLocation = MICRO_SD;
-
 }
