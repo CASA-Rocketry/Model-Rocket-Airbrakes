@@ -24,8 +24,8 @@ void Log::initialize(UI& ui){
 
 
     //Open flash
-    if(!flash.begin(FLASH_SPACE_BYTES))
-        ui.startError("Couldn't start flash");
+    // if(!flash.begin(FLASH_SPACE_BYTES))
+    //     ui.startError("Couldn't start flash");
 
     sPrintln("Successful log (SD & flash) initialization");
 }

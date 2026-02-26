@@ -6,14 +6,13 @@
 #include <vector>
 #include "../util/Config.hpp"
 #include "../hardware/UI/UI.h"
-#include <LittleFS.h>
 #pragma once
 
 #define FLASH_SPACE_BYTES 1024 //set after compiling
 
 class Log{
 private:
-    LittleFS_Program flash;
+    //LittleFS_Program flash;
     SDLib::File flightFile, simFile, configFile;
     std::vector<std::string> logLine;
     std::vector<std::function<std::string()>> logGetters;
@@ -24,7 +23,9 @@ private:
 public:
     enum LogLocation {
         FLASH,
-        MICRO_SD
+        MICRO_SD, 
+        NONE,
+        BOTH
     } logLocation {MICRO_SD}; //should be private
     void initialize(UI&);
     void test();
