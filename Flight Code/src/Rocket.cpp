@@ -10,6 +10,8 @@
 
 #define WIND_TUNNEL false
 
+int totalUpdateIterations = 0;
+unsigned long dummy = 1;
 
 Rocket::Rocket(){
     //Main time tracking
@@ -92,7 +94,7 @@ void Rocket::setup(){
 }
 
 void Rocket::addLogTags(){
-    log.attachTag("Time (us)", usCurrent);
+    log.attachTag("Time (us)", dummy);
 
     //Timing
     #if DEBUG
@@ -105,7 +107,7 @@ void Rocket::addLogTags(){
     log.writeLogLine();
     log.flushSD();
 
-   
+ 
 }
 
 void Rocket::update(){
@@ -114,10 +116,16 @@ void Rocket::update(){
     usCurrent = micros();
     usDelta = usCurrent - usLast;
 
+    if(usDelta > 20 * 1000){
+        sPrint("Loop overrun:"); sPrint(usDelta); sPrint(" at loop "); sPrintln(totalUpdateIterations);
+    }
+
     log.update(); 
 
     if(ui.getButton()) //Single button press to end test
         end();
+
+      totalUpdateIterations++;
 }
 
 void Rocket::updateFlightStates(){
