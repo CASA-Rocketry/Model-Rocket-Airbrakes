@@ -14,53 +14,57 @@ void PhysicalIMU::initialize(UI& ui){
     orientationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
     
 
-
-
     //Setup accelerationIMU
     accelerationIMU.setMode(OPERATION_MODE_CONFIG);
     accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x01);
     accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::ACC_CONFIG, 0x13); //Write acc config (normal mode = 000, 125hz = 100, 16g range = 11)
-    accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x00); \
+    accelerationIMU.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_PAGE_ID_ADDR, 0x00);
 
     accelerationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
     accelerationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
-
     accelerationIMU.setMode(OPERATION_MODE_ACCONLY);
 
-    //adafruit_bno055_offsets_t offsets{3, -12, -34, 35, -347, -224, 0, -2, -1, 1000, 1034};
-    //bno.setSensorOffsets(offsets);
+    adafruit_bno055_offsets_t orientationOffset{37, -51, 71, 35, -347, -224, -1, -2, -1, 1000, 1034}; //not using mag, but including anyway
+    orientationIMU.setSensorOffsets(orientationOffset);
+
+    adafruit_bno055_offsets_t accelerationOffset{13, -17, -24, 0, 0, 0, 0, 0, 4, 1000, 0}; //not using mag, but including anyway
+    accelerationIMU.setSensorOffsets(accelerationOffset);
 
     dPrint("Orientation mode: "); dPrintln(orientationIMU.getMode());
     dPrint("Acceleration mode: "); dPrintln(accelerationIMU.getMode());
+
+    //calibrate();
 
     sPrintln("IMU Initialized");
 }
 
 void PhysicalIMU::calibrate(){
-    //bno.setMode(OPERATION_MODE_NDOF);
+    accelerationIMU.setMode(OPERATION_MODE_IMUPLUS);
     uint8_t calibrationStatus, otherStatus;
 
     //Gyro calibration (set still)
     sPrintln("Calibration gyro");
     do {
-        orientationIMU.getCalibration(&otherStatus, &calibrationStatus, &otherStatus, &otherStatus);
+        accelerationIMU.getCalibration(&otherStatus, &calibrationStatus, &otherStatus, &otherStatus);
+        sPrint(calibrationStatus);
         delay(100);
     } while(calibrationStatus != 3);
     sPrintln("Gyro calibration complete");
 
     sPrint("Calibrating accelerometer - ");
+
     do{
-        orientationIMU.getCalibration(&otherStatus, &otherStatus, &calibrationStatus, &otherStatus);
+        accelerationIMU.getCalibration(&otherStatus, &otherStatus, &calibrationStatus, &otherStatus);
         sPrint(calibrationStatus);
         delay(100);
     } while(calibrationStatus != 3);
 
     //Magnetometer calibration wave around)
     sPrintln("Calibrating magnetometer");
-    do {
-        //bno.getCalibration(&otherStatus, &otherStatus, &otherStatus, &calibrationStatus);
-        delay(100);
-    } while(calibrationStatus != 3);
+    // do {
+    //     accelerationIMU.getCalibration(&otherStatus, &otherStatus, &otherStatus, &calibrationStatus);
+    //     delay(100);
+    // } while(calibrationStatus != 3);
     sPrintln("Magnetometer calibration complete");
 
     //Accelerometer calibration (move for each axis to sense earth)
@@ -69,7 +73,7 @@ void PhysicalIMU::calibrate(){
 
     sPrintln("\nAccelerometer calibration complete");
     adafruit_bno055_offsets_t offsets;
-    orientationIMU.getSensorOffsets(offsets);
+    accelerationIMU.getSensorOffsets(offsets);
     while(true){
         sPrint("Accelerometer: ");
         sPrint(offsets.accel_offset_x); sPrint(" ");

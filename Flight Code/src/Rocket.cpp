@@ -89,7 +89,7 @@ void Rocket::setup(){
     
     addLogTags();
     mode = IDLE;
-    log.setLogLocation(Log::LogLocation::FLASH);
+    log.setLogLocation(Log::LogLocation::NONE);
 }
 
 void Rocket::addLogTags(){
@@ -198,15 +198,20 @@ void Rocket::updateFlightStates(){
                 break;
             case COASTING: //Also includes first several seconds of recovery so as to not prematurely switch modes
                 brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));
-                // if(usCurrent - usLaunch > 1000 * 1000 * 2.5)
-                //     brake.setDeployment(1); 
-                // else 
-                //     brake.setDeployment(0);   
+                
+                //Deployment program
+                // if(usCurrent - usLaunch < 1000 * 1000 * 2.5)
+                //     brake.setDeployment(0); 
+                // else if(usCurrent - usLaunch < 1000 * 1000 * 3.5)
+                //     brake.setDeployment(0.5);
+                // else
+                //     brake.setDeployment(1);
+             
             
-                    if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5){
-                        mode = RECOVERY;
-                        log.transferFlashToSD(); //switch to SD logging is included 
-                    }
+                if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5){
+                    mode = RECOVERY;
+                    //log.transferFlashToSD(); //switch to SD logging is included 
+                }
               
                 break;
             case RECOVERY:
