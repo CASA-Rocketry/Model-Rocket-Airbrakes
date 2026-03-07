@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#define BUZZER_ENABLED true
 
 class UI {
 private:

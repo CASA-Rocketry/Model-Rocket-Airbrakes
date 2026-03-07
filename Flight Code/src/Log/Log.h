@@ -1,5 +1,5 @@
 #include <SPI.h>
-#include <SD.h>
+#include <SdFat.h>
 #include "hardware/hardwareMap.h"
 #include <Arduino.h>
 #include <string>
@@ -8,11 +8,13 @@
 #include "../hardware/UI/UI.h"
 #pragma once
 
-
+#define FLASH_SPACE_BYTES 1024 //set after compiling
 
 class Log{
 private:
-    File flightFile, simFile, configFile;
+    //LittleFS_Program flash;
+    SdFat32 SD;
+    FatFile flightFile, simFile, configFile;
     std::vector<std::string> logLine;
     std::vector<std::function<std::string()>> logGetters;
     int valuesAttached = 0; //tracks number of logLine entries that have been attached
@@ -20,6 +22,12 @@ private:
     void openSimFile();
     void updateLogLine();
 public:
+    enum LogLocation {
+        FLASH,
+        MICRO_SD, 
+        NONE,
+        BOTH
+    } logLocation {MICRO_SD}; //should be private
     void initialize(UI&);
     void test();
     bool hasCard();
@@ -51,4 +59,7 @@ public:
     void writeLogLine(); //Could be private, but used once publically to write headers
     void printPreamble(std::string);
     void logPrintln(std::string);
+    void openFlash();
+    void setLogLocation(LogLocation);
+    void transferFlashToSD();
 };

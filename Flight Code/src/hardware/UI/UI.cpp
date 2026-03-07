@@ -48,13 +48,16 @@ void UI::startError(std::string message){
 }
 
 void UI::setTone(int frequency, int duration){
+    #if BUZZER_ENABLED
     tone(hardwareMap::BUZZER, frequency, duration);
+    #endif
 }
 
 void UI::setTone(int frequency){
-    tone(hardwareMap::BUZZER, frequency);
+    #if BUZZER_ENABLED
+        tone(hardwareMap::BUZZER, frequency);
+    #endif
 }
-
 
 
 void UI::setRed(int value){
