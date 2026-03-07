@@ -42,6 +42,7 @@ void Rocket::setup(){
     ui.setTone(4000, 1000); //Turn on beep
 
     //Log startup, read config, and preamble
+    sPrintln("test");
     log.initialize(ui);
     log.readConfig(config, ui);
     sPrintln("Parsed Configuration ------------------------------------------------");
@@ -55,8 +56,10 @@ void Rocket::setup(){
     altimeter.initialize(ui);
     imu.initialize(ui);
     brake.initialize();
-    if(config.AIRBRAKES_ENABLED)
+    if(config.AIRBRAKES_ENABLED){
         brake.enable();
+        sPrintln("enabling brake");
+    }
     brake.test();
 
     ui.setTone(4000, 3000); //3s high tone for completion
@@ -85,11 +88,12 @@ void Rocket::setup(){
     #endif
     altimeter.calibrate(ui);
     ui.setTone(4000, 5000); //5 sec success beep
+    ui.setBlue(HIGH);
     log.logPrintln("Calibration point: " + std::to_string(altimeter.altitudeOffset));
     
     addLogTags();
     mode = IDLE;
-    log.setLogLocation(Log::LogLocation::NONE);
+    log.setLogLocation(Log::LogLocation::MICRO_SD);
 }
 
 void Rocket::addLogTags(){
@@ -126,7 +130,6 @@ void Rocket::addLogTags(){
     //Print headers
     log.writeLogLine();
     log.flushSD();
-    log.setLogLocation(Log::LogLocation::NONE);
 }
 
 void Rocket::update(){
@@ -155,7 +158,8 @@ void Rocket::update(){
         usApogee = usCurrent;
     }
 
-    updateFlightStates();
+    //updateFlightStates();
+    updateWindTunnel();
 
     //Allow ending regardless of state, though it should occur in LANDED mode
     //5 second continuous hold to g
