@@ -6,7 +6,7 @@
 #define SERIAL_ENABLED true
 #define WAIT_FOR_SERIAL_CONNECTION true 
 #define PRINT_IN_FLIGHT false //determines whether to print during flight (ie. for testing)
-#define DEBUG true //ie. remove before flight if false
+#define DEBUG false //ie. remove before flight if false
 
 #if SERIAL_ENABLED 
   #define sPrint(a) Serial.print(a)
