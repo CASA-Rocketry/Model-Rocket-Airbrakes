@@ -1,0 +1,22 @@
+Code compiled on Mar 13 2026 at 16:53:56
+﻿Simulation Mode (T/F),F
+Airbrakes Enabled (T/F),T
+Log File Name,RF
+Sim File Name (if applicable),Sim
+Burnout Mass (kg),0.59
+Air Density (kg/m^3),1.215
+Rocket CD,0.55
+Airbrake CD,0.8
+Rocket Area (m^2),0.00243
+Kalman Model Y STD,0.2
+Kalman Model V STD,0.5
+Kalman Model A STD,0.5
+Kalman Measurement Y STD,5
+Kalman Measurement A STD,0.5
+Target Apogee (m),228.6
+Launch Acceleration Threshold (m/s^2),40
+Coast Lockout (s),1.5
+KP (1/s),0.24
+Altimeter Lockout (s),60
+Control Max Velocity (dep/s),2
+

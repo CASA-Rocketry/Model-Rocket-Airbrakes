@@ -1,0 +1,20 @@
+﻿Simulation Mode (T/F),F
+Airbrakes Enabled (T/F),T
+Log File Name,WT
+Sim File Name (if applicable),Sim
+Burnout Mass (kg),0.58
+Air Density (kg/m^3),1.22
+Rocket CD,0.5
+Airbrake CD,0.75
+Rocket Area (m^2),0.00243
+Kalman Model Y STD,0.1
+Kalman Model V STD,0.2
+Kalman Model A STD,0.5
+Kalman Measurement Y STD,6
+Kalman Measurement A STD,0.5
+Target Apogee (m),228.6
+Launch Acceleration Threshold (m/s^2),40
+Coast Lockout (s),1.5
+KP (1/s),0.24
+Altimeter Lockout (s),10
+Control Max Velocity (dep/s),2
