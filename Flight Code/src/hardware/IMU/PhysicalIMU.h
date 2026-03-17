@@ -2,6 +2,7 @@
 #include <string>
 #include "../UI/UI.h"
 #include <BasicLinearAlgebra.h>
+#include "../../util/print.h"
 
 class PhysicalIMU{
 private:    

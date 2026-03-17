@@ -38,7 +38,7 @@ void control::startRateLimiter(Config& config){
 //Deployment is 0 when it switches to tracking mode 
 
 //Numerically solves for cd to reach target apogee in config
-//Computes 
+//Computes +
 double control::computeDeployment(double y, double v, Config& config){
     //Check bounds 
     if(getApogee(y, v, 0, config) < config.TARGET_APOGEE_METERS)

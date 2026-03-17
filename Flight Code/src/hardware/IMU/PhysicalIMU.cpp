@@ -1,5 +1,4 @@
 #include "PhysicalIMU.h"
-#include "../../util/print.h"
 #include "../UI/UI.h"
 
 void PhysicalIMU::initialize(UI& ui){
@@ -12,8 +11,8 @@ void PhysicalIMU::initialize(UI& ui){
     orientationIMU.setMode(OPERATION_MODE_IMUPLUS);
     orientationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
     orientationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
-    orientationIMU.setSensorOffsets({26, -42, 78, -11, 58, -2, -2, 0, 0, 1000, 1000});
-
+    orientationIMU.setSensorOffsets({20, -48, 45, 0, 0, 0, -1, -1, 3, 1000, 1000}); //{26, -42, 78, -11, 58, -2, -2, 0, 0, 1000, 1000});
+//{19, -47, 46, 0, 0, 0, -2, -3, 1, 1000, 1000}
 
     //Setup accelerationIMU
     accelerationIMU.setMode(OPERATION_MODE_CONFIG);
@@ -27,10 +26,13 @@ void PhysicalIMU::initialize(UI& ui){
     accelerationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
     accelerationIMU.setMode(OPERATION_MODE_ACCONLY);
 
+    
     #if DEBUG
+         //calibrateOrientationIMU(ui);
+        //calibrateAccelerationIMU(ui);
         while(true){
             readValues();
-            sPrintln(rawLocalAcceleration.z());
+            dPrintln(rawLocalAcceleration.z());
             delay(100);
         }
     #endif
@@ -58,7 +60,8 @@ void PhysicalIMU::calibrateAccelerationIMU(UI& ui){
             imu::Vector<3> averageAcceleration;
             const int DATA_POINTS = 100;
             for(int i = 0; i < DATA_POINTS; i++){
-                readValues();
+                //readValues();
+                rawLocalAcceleration = accelerationIMU.getVector(Adafruit_BNO055::adafruit_vector_type_t::VECTOR_ACCELEROMETER);
                 averageAcceleration = averageAcceleration + rawLocalAcceleration;
                 delay(50);
             }
@@ -129,19 +132,19 @@ void PhysicalIMU::printOffsets(Adafruit_BNO055& bno){
 
 
 PhysicalIMU::PhysicalIMU(){
-    AInverse.cell(0, 0) = 0.985079;
-    AInverse.cell(0, 1) = -0.028604;
-    AInverse.cell(0, 2) = 0.003267;
-    AInverse.cell(1, 0) = -0.028604;
-    AInverse.cell(1, 1) = 0.990997;
-    AInverse.cell(1, 2) = 0.006620;
-    AInverse.cell(2, 0) = 0.003267;
-    AInverse.cell(2, 1) = 0.006620;
-    AInverse.cell(2, 2) = 0.996102;
+    AInverse.cell(0, 0) = 0.984960;
+    AInverse.cell(0, 1) = -0.008554;
+    AInverse.cell(0, 2) = -0.047969;
+    AInverse.cell(1, 0) = -0.008554;
+    AInverse.cell(1, 1) = 0.990429;
+    AInverse.cell(1, 2) = 0.010569;
+    AInverse.cell(2, 0) = -0.047969;
+    AInverse.cell(2, 1) = 0.010569;
+    AInverse.cell(2, 2) = 0.990000;
 
-    bias(0) = 0.057610;
-    bias(1) = -0.209385;
-    bias(2) = 0.707400;
+    bias(0) = 0.002371;
+    bias(1) = -0.111793;
+    bias(2) = 1.524920;//0.707400;
 }
 
 void PhysicalIMU::readValues(){

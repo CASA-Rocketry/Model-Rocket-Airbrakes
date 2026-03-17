@@ -78,6 +78,7 @@ void Rocket::setup(){
     do {
         imu.readValues();
         delay(50);
+        dPrintln(imu.getPitch() * 180 / M_PI);
     } while (!Trigger::getHoldState(imu.getPitch() > 0.75 * M_PI, 5000));
     Trigger::reset();
     ui.playRandomSong(config.ALTIMETER_LOCKOUT_SECONDS, millis());
@@ -191,7 +192,9 @@ void Rocket::updateFlightStates(){
              
             
                 if(stateEstimator.y() < 20 && stateEstimator.v() < -0.5){
+                    #if !DEBUG
                     mode = RECOVERY;
+                    #endif
                     //log.transferFlashToSD(); //switch to SD logging is included 
                 }
                 break;

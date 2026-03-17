@@ -11,7 +11,7 @@ Airbrake::Airbrake(){
 
 void Airbrake::initialize(){
     sPrintln("Initializing Brakes");
-    servo.attach(hardwareMap::PWM1);
+    servo.attach(hardwareMap::PWM2);
     close();
     sPrintln("Brakes initialized");
 }
