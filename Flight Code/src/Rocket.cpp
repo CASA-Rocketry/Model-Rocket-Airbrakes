@@ -180,7 +180,7 @@ void Rocket::updateFlightStates(){
                 }
                 break;
             case COASTING: //Also includes first several seconds of recovery so as to not prematurely switch modes
-                brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config));
+                brake.setDeployment(control::computeDeployment(stateEstimator.y(), stateEstimator.v(), config, imu.getCosPitch()));
                 
                 //Deployment program
                 // if(usCurrent - usLaunch < 1000 * 1000 * 2.5)

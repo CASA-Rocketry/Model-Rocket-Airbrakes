@@ -11,8 +11,10 @@ void PhysicalIMU::initialize(UI& ui){
     orientationIMU.setMode(OPERATION_MODE_IMUPLUS);
     orientationIMU.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P8);
     orientationIMU.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P7);
-    orientationIMU.setSensorOffsets({20, -48, 45, 0, 0, 0, -1, -1, 3, 1000, 1000}); //{26, -42, 78, -11, 58, -2, -2, 0, 0, 1000, 1000});
+    orientationIMU.setSensorOffsets({11, -26, 77, 0, 0, 0, -1, -2, 1, 1000, 1000}); //{26, -42, 78, -11, 58, -2, -2, 0, 0, 1000, 1000});
 //{19, -47, 46, 0, 0, 0, -2, -3, 1, 1000, 1000}
+
+//{17, -32, 68, 0, 0, 0, -1, -4, 1, 1000, 1000}
 
     //Setup accelerationIMU
     accelerationIMU.setMode(OPERATION_MODE_CONFIG);
@@ -28,7 +30,7 @@ void PhysicalIMU::initialize(UI& ui){
 
     
     #if DEBUG
-         //calibrateOrientationIMU(ui);
+        //calibrateOrientationIMU(ui);
         //calibrateAccelerationIMU(ui);
         while(true){
             readValues();
@@ -132,19 +134,19 @@ void PhysicalIMU::printOffsets(Adafruit_BNO055& bno){
 
 
 PhysicalIMU::PhysicalIMU(){
-    AInverse.cell(0, 0) = 0.984960;
-    AInverse.cell(0, 1) = -0.008554;
-    AInverse.cell(0, 2) = -0.047969;
-    AInverse.cell(1, 0) = -0.008554;
-    AInverse.cell(1, 1) = 0.990429;
-    AInverse.cell(1, 2) = 0.010569;
-    AInverse.cell(2, 0) = -0.047969;
-    AInverse.cell(2, 1) = 0.010569;
-    AInverse.cell(2, 2) = 0.990000;
+    AInverse.cell(0, 0) = 0.978573;
+    AInverse.cell(0, 1) = -0.080020;
+    AInverse.cell(0, 2) = -0.008454;
+    AInverse.cell(1, 0) = -0.080020;
+    AInverse.cell(1, 1) = 0.983109;
+    AInverse.cell(1, 2) = -0.080621;
+    AInverse.cell(2, 0) = -0.008454;
+    AInverse.cell(2, 1) = -0.080621;
+    AInverse.cell(2, 2) = 0.989809;
 
-    bias(0) = 0.002371;
-    bias(1) = -0.111793;
-    bias(2) = 1.524920;//0.707400;
+    bias(0) = 0.022762;
+    bias(1) = -0.166534;
+    bias(2) = 1.408686;
 }
 
 void PhysicalIMU::readValues(){
@@ -167,4 +169,8 @@ void PhysicalIMU::readValues(){
 //Return in [0, pi]
 double PhysicalIMU::getPitch(){
     return std::acos(1 - 2 * quat.x() * quat.x() - 2 * quat.y() * quat.y());
+}
+
+double PhysicalIMU::getCosPitch(){
+    return 1 - 2 * quat.x() * quat.x() - 2 * quat.y() * quat.y();
 }

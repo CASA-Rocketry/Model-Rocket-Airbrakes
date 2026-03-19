@@ -30,6 +30,7 @@ public:
     void readValues();
     void calibrate();
     double getPitch();
+    double getCosPitch();
     //double pitch; //radians
     imu::Quaternion quat;
     imu::Vector<3> rawLocalAcceleration, gravityLocalAcceleration, localAcceleration, globalAcceleration;
