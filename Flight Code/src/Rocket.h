@@ -37,6 +37,8 @@ private:
     Airbrake brake;
     UI ui;
 
+    double correctedAltitude {0};
+
     void addLogTags();
     void readSensors();
     void updateFlightStates();

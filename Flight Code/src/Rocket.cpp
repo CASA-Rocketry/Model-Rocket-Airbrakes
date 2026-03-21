@@ -137,7 +137,8 @@ void Rocket::update(){
 
 
     readSensors(); //Inicludes calculation of all sensor quantities prior to KF fusion
-    stateEstimator.update(altimeter.altitude, imu.globalAcceleration.z(), usDelta / 1000000.0);
+    correctedAltitude = stateEstimator.getCorrectedAltitude(altimeter.altitude, imu.getCosPitch());
+    stateEstimator.update(correctedAltitude, imu.globalAcceleration.z(), usDelta / 1000000.0);
 
 
     //Check for apogee (outside of modes in case of stating error)

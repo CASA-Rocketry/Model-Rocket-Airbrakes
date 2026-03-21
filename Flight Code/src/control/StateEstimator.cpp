@@ -25,6 +25,11 @@ void StateEstimator::fillFromConfig(Config& config){
     setMeasurementSTD(config.MEASUREMENT_STD_Y, config.MEASUREMENT_STD_A); //initializes R with default config values
 }
 
+double StateEstimator::getCorrectedAltitude(double yRaw, double cosPitch){
+    double lastV = v() / cosPitch;
+    return yRaw - 0.0055 * lastV * lastV;
+}
+
 void StateEstimator::update(double yMeasurement, double aMeasurement, double dtSeconds){
     //Update measuremennt and state-transition
     phi = {1, dtSeconds, 0.5 * dtSeconds * dtSeconds,

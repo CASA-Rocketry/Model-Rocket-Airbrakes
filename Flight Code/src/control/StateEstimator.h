@@ -21,6 +21,7 @@ public:
     void setMeasurementSTD(double, double);
     void fillFromConfig(Config&);
     void update(double, double, double);
+    double getCorrectedAltitude(double, double);
     double& y();
     double& v();
     double& a();
