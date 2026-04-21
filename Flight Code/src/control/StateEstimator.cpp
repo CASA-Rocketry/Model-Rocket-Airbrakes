@@ -26,8 +26,8 @@ void StateEstimator::fillFromConfig(Config& config){
 }
 
 double StateEstimator::getCorrectedAltitude(double yRaw, double cosPitch){
-    double lastV = v() / cosPitch;
-    return yRaw - 0.0055 * lastV * lastV;
+    //double lastV = v();// / cosPitch;
+    return yRaw;// - 0.004 * lastV * lastV;
 }
 
 void StateEstimator::update(double yMeasurement, double aMeasurement, double dtSeconds){

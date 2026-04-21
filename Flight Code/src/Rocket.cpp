@@ -96,7 +96,8 @@ void Rocket::setup(){
 //Log location must be set prior to use
 void Rocket::addLogTags(){
     log.attachTag("Time (us)", usCurrent);
-    log.attachTag("Altitude AGL (m)", altimeter.altitude);
+    log.attachTag("RAW Altitude AGL (m)", altimeter.altitude);
+    log.attachTag("Corrected Altitude AGL (m)", correctedAltitude);
     log.attachTag("Temperature (deg C)", altimeter.temperature);
     log.attachTag("Mode", mode);
 

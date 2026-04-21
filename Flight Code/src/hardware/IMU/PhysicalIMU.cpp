@@ -134,19 +134,19 @@ void PhysicalIMU::printOffsets(Adafruit_BNO055& bno){
 
 
 PhysicalIMU::PhysicalIMU(){
-    AInverse.cell(0, 0) = 0.978573;
-    AInverse.cell(0, 1) = -0.080020;
-    AInverse.cell(0, 2) = -0.008454;
-    AInverse.cell(1, 0) = -0.080020;
-    AInverse.cell(1, 1) = 0.983109;
-    AInverse.cell(1, 2) = -0.080621;
-    AInverse.cell(2, 0) = -0.008454;
-    AInverse.cell(2, 1) = -0.080621;
-    AInverse.cell(2, 2) = 0.989809;
+    AInverse.cell(0, 0) = 0.982631;
+    AInverse.cell(0, 1) = -0.003033;
+    AInverse.cell(0, 2) = 0.033845;
+    AInverse.cell(1, 0) = -0.003033;
+    AInverse.cell(1, 1) = 0.989030;
+    AInverse.cell(1, 2) = 0.021726;
+    AInverse.cell(2, 0) = 0.033845;
+    AInverse.cell(2, 1) = 0.021726;
+    AInverse.cell(2, 2) = 0.992800;
 
-    bias(0) = 0.022762;
-    bias(1) = -0.166534;
-    bias(2) = 1.408686;
+    bias(0) = 0.033343;
+    bias(1) = -0.126950;
+    bias(2) = 1.403028;
 }
 
 void PhysicalIMU::readValues(){
